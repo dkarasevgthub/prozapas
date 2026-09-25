@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/styles.css">
+  <script src="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/_ds_bundle.js"></script>
+  <style>
+    html{overflow-y:scroll}
+    body{margin:0;background:var(--color-bg);color:var(--color-text)}
+    a{color:var(--color-accent-700)}
+    a:hover{color:var(--color-accent)}
+    .breadcrumb{font-size:18px;color:var(--color-neutral-600);margin-bottom:var(--space-2)}
+    .breadcrumb a{color:var(--color-neutral-600);text-decoration:none;cursor:pointer}
+    .breadcrumb a:hover{color:var(--color-accent-700)}
+    main h1{font-size:44px}
+    main h4{font-size:22px}
+    .table{font-size:16px}
+    .table th{font-size:13px;white-space:normal;line-height:1.3;padding:var(--space-1) var(--space-2);vertical-align:bottom;overflow-wrap:break-word;text-transform:none;letter-spacing:normal;font-weight:600}
+    .table td{padding:var(--space-2);line-height:1.25;overflow-wrap:break-word}
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--space-3);padding:var(--space-8) var(--space-4);color:var(--color-neutral-600)}
+  </style>
+</helmet>
+<div style="display:flex;min-height:100vh;width:100%;font-family:var(--font-body);overflow-x:hidden">
+  <dc-import name="Sidebar" active="orders" hint-size="200px,100%"></dc-import>
+  <main style="flex:1;min-width:0;padding:var(--space-8) var(--space-8) var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)">
+
+    <div class="breadcrumb"><a href="ProЗапас Главная.dc.html">ProЗапас</a> / <a href="ProЗапас Заказы.dc.html">Заказы</a> / №{{ order.number }}</div>
+
+    <sc-if value="{{ hasOrder }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)">
+      <div>
+        <h1 style="margin-bottom:4px">Заказ №{{ order.number }}</h1>
+        <div style="font-size:14px;color:var(--color-neutral-600)">Перемещение товара со склада-отправителя</div>
+      </div>
+      <sc-if value="{{ canAcceptOrDecline }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:var(--space-3)">
+          <button class="btn btn-secondary" onClick="{{ onOpenDeclineDialog }}">Отклонить</button>
+          <button class="btn btn-primary" onClick="{{ onAcceptTheirOrder }}">Принять заказ</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ canCancelOurs }}" hint-placeholder-val="{{ false }}">
+        <button class="btn btn-secondary" onClick="{{ onOpenCancelDialog }}">Отменить заказ</button>
+      </sc-if>
+    </div>
+
+    <div class="blueprint" style="padding:var(--space-4);display:flex;gap:var(--space-8);flex-wrap:wrap">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Статус</div><span class="tag" style="font-size:12px;padding:5px 12px;white-space:nowrap;border:none;font-weight:700;color:{{ order.statusColor }};background:{{ order.statusBg }}">{{ order.statusLabel }}</span></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Позиций</div><div style="font-family:var(--font-heading);font-size:18px">{{ order.positionsCount }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Дата создания</div><div style="font-family:var(--font-heading);font-size:18px">{{ order.createdDateTime }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Дата отгрузки</div><div style="font-family:var(--font-heading);font-size:18px">{{ order.shipDateTime }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Дата приёмки</div><div style="font-family:var(--font-heading);font-size:18px">{{ order.acceptedAtLabel }}</div></div>
+    </div>
+
+    <div class="blueprint" style="padding:var(--space-4);display:flex;gap:var(--space-8);flex-wrap:wrap">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Получатель</div><div style="font-family:var(--font-heading);font-size:18px">{{ order.receiverWarehouse }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Ответственный-получатель</div><div style="font-family:var(--font-heading);font-size:18px">{{ order.receiverResponsible }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Отправитель</div><div style="font-family:var(--font-heading);font-size:18px">{{ order.senderWarehouse }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Ответственный-отправитель</div><div style="font-family:var(--font-heading);font-size:18px">{{ order.senderResponsible }}</div></div>
+    </div>
+
+    <sc-if value="{{ isShipped }}" hint-placeholder-val="{{ false }}">
+      <div class="blueprint" style="padding:var(--space-4);font-size:13px;color:var(--color-neutral-600)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        Заказ отгружен получателю — {{ order.counterpartyWarehouse }}. Ожидает подтверждения приёмки на их стороне.
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCreatedOurs }}" hint-placeholder-val="{{ false }}">
+      <div class="blueprint" style="padding:var(--space-4);font-size:13px;color:var(--color-neutral-600)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        Заявка отправлена и ожидает обработки на складе-отправителе.
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isProcessingOurs }}" hint-placeholder-val="{{ false }}">
+      <div class="blueprint" style="padding:var(--space-4);font-size:13px;color:var(--color-neutral-600)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        Заказ в обработке — ожидает отгрузки со склада-отправителя. Как только партия придёт, обработайте её в разделе <a href="ProЗапас Приемка.dc.html">«Приемка»</a>.
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isProcessingTheirs }}" hint-placeholder-val="{{ false }}">
+      <div class="blueprint" style="padding:var(--space-4)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:flex;gap:var(--space-8);flex-wrap:wrap">
+          <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Статус отгрузки</div><div style="font-family:var(--font-heading);font-size:18px">{{ shipmentStatus }}</div></div>
+          <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Начало сборки</div><div style="font-family:var(--font-heading);font-size:18px">{{ pickStartedAt }}</div></div>
+          <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Ответственный</div><div style="font-family:var(--font-heading);font-size:18px">{{ pickResponsible }}</div></div>
+          <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Прогресс сборки</div><div style="font-family:var(--font-heading);font-size:18px">{{ packedCount }} из {{ order.positionsCount }} позиций</div></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDeclined }}" hint-placeholder-val="{{ false }}">
+      <div class="blueprint" style="padding:var(--space-4);font-size:13px">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="color:var(--color-neutral-600);margin-bottom:2px">Заказ отклонён</div>
+        <sc-if value="{{ order.declineReason }}" hint-placeholder-val="{{ false }}">
+          <div>{{ order.declineReason }}</div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCancelled }}" hint-placeholder-val="{{ false }}">
+      <div class="blueprint" style="padding:var(--space-4);font-size:13px">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="color:var(--color-neutral-600);margin-bottom:2px">Заказ отменён</div>
+        <sc-if value="{{ order.cancelReason }}" hint-placeholder-val="{{ false }}">
+          <div>{{ order.cancelReason }}</div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:var(--space-6);align-items:start">
+      <div class="blueprint" style="padding:var(--space-4)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <h4 style="margin-bottom:var(--space-3)">Состав заказа</h4>
+        <table class="table" style="table-layout:fixed;width:100%">
+          <thead><tr>
+            <th style="width:20%">Артикул</th><th style="width:55%">Наименование</th><th style="width:12%">Ед. изм.</th><th style="width:13%">Кол-во</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{ posPage }}" as="p" hint-placeholder-count="3">
+              <tr>
+                <td style="color:var(--color-neutral-600)">{{ p.article }}</td>
+                <td>{{ p.name }}</td>
+                <td style="color:var(--color-neutral-600)">{{ p.unit }}</td>
+                <td>{{ p.qty }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <sc-if value="{{ posShowPagination }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);margin-top:var(--space-4)">
+            <div style="font-size:13px;color:var(--color-neutral-600)">{{ posRangeText }}</div>
+            <div style="display:flex;align-items:center;gap:var(--space-2)">
+              <button class="btn btn-secondary btn-icon" disabled="{{ posPagePrevDisabled }}" onClick="{{ onPosPagePrev }}">‹</button>
+              <sc-for list="{{ posPageNumbers }}" as="pn" hint-placeholder-count="3">
+                <button class="{{ pn.cls }}" onClick="{{ pn.onClick }}">{{ pn.n }}</button>
+              </sc-for>
+              <button class="btn btn-secondary btn-icon" disabled="{{ posPageNextDisabled }}" onClick="{{ onPosPageNext }}">›</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div class="blueprint" style="padding:var(--space-4)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <h4 style="margin-bottom:var(--space-3)">История</h4>
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ order.history }}" as="h" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider)">
+              <span class="tag" style="border:none;font-weight:700;color:{{ h.color }};background:{{ h.bg }}">{{ h.label }}</span>
+              <div style="font-size:12px;color:var(--color-neutral-600);margin-left:auto">{{ h.dateTime }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ notFound }}" hint-placeholder-val="{{ false }}">
+    <div class="blueprint" style="flex:1">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div class="empty-state">
+        <h3 style="color:var(--color-text)">Заказ не найден</h3>
+        <div style="font-size:13px;max-width:340px">Проверьте ссылку или вернитесь к списку заказов.</div>
+      </div>
+    </div>
+    </sc-if>
+
+  </main>
+
+  <sc-if value="{{ isDeclineDialogOpen }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" style="position:fixed" onClick="{{ onCloseDeclineDialog }}">
+    <div class="dialog" style="background:var(--color-surface)" onClick="{{ stopClick }}">
+      <div class="dialog-title">Отклонить заказ</div>
+      <div class="dialog-body">
+        <div class="field" style="margin-bottom:0">
+          <label>Причина отказа (опционально)</label>
+          <input class="input" type="text" value="{{ declineReasonValue }}" onChange="{{ onDeclineReasonChange }}">
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" onClick="{{ onCloseDeclineDialog }}">Отмена</button>
+        <button class="btn btn-primary" onClick="{{ onConfirmDecline }}">Отклонить заказ</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isCancelDialogOpen }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" style="position:fixed" onClick="{{ onCloseCancelDialog }}">
+    <div class="dialog" style="background:var(--color-surface)" onClick="{{ stopClick }}">
+      <div class="dialog-title">Отменить заказ</div>
+      <div class="dialog-body">
+        <div class="field" style="margin-bottom:0">
+          <label>Причина отмены (опционально)</label>
+          <input class="input" type="text" value="{{ cancelReasonValue }}" onChange="{{ onCancelReasonChange }}">
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" onClick="{{ onCloseCancelDialog }}">Назад</button>
+        <button class="btn btn-primary" onClick="{{ onConfirmCancel }}">Отменить заказ</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const STORAGE_KEY = 'prozapas_orders_v4';
+const OUR_WAREHOUSE = 'Склад №2';
+const OUR_RESPONSIBLE_LABEL = 'Кузнецов И.А.';
+const PICKERS = ['Смирнов А.П.', 'Ковалёв Д.С.', 'Егорова Н.И.'];
+const STATUS_META = {
+  created: { label: 'Создан', color: 'var(--color-neutral-800)', bg: 'var(--color-neutral-200)' },
+  processing: { label: 'В обработке', color: 'var(--color-accent-2-700)', bg: 'var(--color-accent-2-100)' },
+  shipped: { label: 'Отгружен', color: 'var(--color-accent-800)', bg: 'var(--color-accent-100)' },
+  received: { label: 'Завершен', color: 'var(--color-accent-700)', bg: 'transparent' },
+  declined: { label: 'Отклонён', color: 'var(--color-neutral-600)', bg: 'transparent' },
+  cancelled: { label: 'Отменён', color: 'var(--color-neutral-600)', bg: 'transparent' }
+};
+function formatNow() {
+  const d = new Date();
+  return d.toLocaleDateString('ru-RU') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function loadOrders() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [];
+}
+function saveOrders(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+class Component extends DCLogic {
+  getId() { return parseInt(new URLSearchParams(window.location.search).get('id'), 10); }
+
+  transition(newStatus, extra) {
+    const id = this.getId();
+    const orders = loadOrders();
+    const idx = orders.findIndex(o => o.id === id);
+    if (idx === -1) return;
+    const dateTime = formatNow();
+    orders[idx] = { ...orders[idx], status: newStatus, ...extra, history: [...orders[idx].history, { status: newStatus, dateTime }] };
+    saveOrders(orders);
+    this.forceUpdate();
+  }
+
+  onAcceptTheirOrder() { this.transition('processing', { packedIndexes: [], pickStartedAt: formatNow(), pickResponsible: PICKERS[Math.floor(Math.random() * PICKERS.length)] }); }
+
+  openDeclineDialog() { this.setState({ isDeclineDialogOpen: true, declineReason: '' }); }
+  closeDeclineDialog() { this.setState({ isDeclineDialogOpen: false }); }
+  confirmDecline() {
+    this.transition('declined', { declineReason: this.state.declineReason || '' });
+    this.setState({ isDeclineDialogOpen: false });
+  }
+
+  state = { isDeclineDialogOpen: false, declineReason: '', isCancelDialogOpen: false, cancelReason: '', posPage: 1, posPageSize: 20 };
+
+  POS_ROW_HEIGHT = 41;
+  POS_RESERVED_HEIGHT = 560;
+  computePosPageSize() { return Math.max(5, Math.floor((window.innerHeight - this.POS_RESERVED_HEIGHT) / this.POS_ROW_HEIGHT)); }
+  componentDidMount() {
+    this.setState({ posPageSize: this.computePosPageSize() });
+    this._onResize = () => this.setState({ posPageSize: this.computePosPageSize() });
+    window.addEventListener('resize', this._onResize);
+  }
+  componentWillUnmount() { if (this._onResize) window.removeEventListener('resize', this._onResize); }
+  goToPosPage(n) { this.setState({ posPage: n }); }
+
+  openCancelDialog() { this.setState({ isCancelDialogOpen: true, cancelReason: '' }); }
+  closeCancelDialog() { this.setState({ isCancelDialogOpen: false }); }
+  confirmCancel() {
+    this.transition('cancelled', { cancelReason: this.state.cancelReason || '' });
+    this.setState({ isCancelDialogOpen: false });
+  }
+
+  renderVals() {
+    const id = this.getId();
+    const raw = loadOrders().find(o => o.id === id);
+    if (!raw) return { hasOrder: false, notFound: true, order: { positions: [], history: [] } };
+    const isOurs = raw.direction === 'ours';
+    const order = {
+      ...raw,
+      statusColor: STATUS_META[raw.status].color,
+      statusBg: STATUS_META[raw.status].bg,
+      statusLabel: STATUS_META[raw.status].label,
+      senderWarehouse: isOurs ? raw.counterpartyWarehouse : OUR_WAREHOUSE,
+      senderResponsible: isOurs ? raw.counterpartyResponsible : raw.responsible,
+      receiverWarehouse: isOurs ? OUR_WAREHOUSE : raw.counterpartyWarehouse,
+      receiverResponsible: isOurs ? raw.responsible : raw.counterpartyResponsible,
+      positionsCount: raw.positions.length,
+      acceptedAtLabel: raw.acceptedAt || '—',
+      history: raw.history.map(h => ({ label: STATUS_META[h.status].label, color: STATUS_META[h.status].color, bg: STATUS_META[h.status].bg, dateTime: h.dateTime }))
+    };
+    const isTheirs = raw.direction === 'theirs';
+    const posPageSize = this.state.posPageSize;
+    const posTotalPages = Math.max(1, Math.ceil(raw.positions.length / posPageSize));
+    const posPage = Math.min(this.state.posPage, posTotalPages);
+    const posPageEntries = raw.positions.slice((posPage - 1) * posPageSize, posPage * posPageSize);
+    const posPageNumbers = Array.from({ length: posTotalPages }, (_, i) => ({
+      n: i + 1, cls: 'btn btn-icon ' + (i + 1 === posPage ? 'btn-primary' : 'btn-secondary'),
+      onClick: () => this.goToPosPage(i + 1)
+    }));
+    return {
+      posPage: posPageEntries,
+      posPageNumbers,
+      posShowPagination: posTotalPages > 1,
+      posPagePrevDisabled: posPage <= 1,
+      posPageNextDisabled: posPage >= posTotalPages,
+      onPosPagePrev: () => this.goToPosPage(posPage - 1),
+      onPosPageNext: () => this.goToPosPage(posPage + 1),
+      posRangeText: raw.positions.length === 0 ? '' : ((posPage - 1) * posPageSize + 1) + '–' + Math.min(posPage * posPageSize, raw.positions.length) + ' из ' + raw.positions.length,
+      hasOrder: true,
+      notFound: false,
+      order,
+      canAcceptOrDecline: raw.status === 'created' && isTheirs,
+      canCancelOurs: isOurs && (raw.status === 'created' || raw.status === 'processing'),
+      isCreatedOurs: raw.status === 'created' && isOurs,
+      isProcessingOurs: raw.status === 'processing' && isOurs,
+      isProcessingTheirs: raw.status === 'processing' && isTheirs,
+      isDeclined: raw.status === 'declined',
+      isCancelled: raw.status === 'cancelled',
+      isShipped: raw.status === 'shipped' && isTheirs,
+      isIncoming: isOurs,
+      isOutgoing: isTheirs,
+      onAcceptTheirOrder: () => this.onAcceptTheirOrder(),
+      packedCount: (raw.packedIndexes || []).length,
+      pickStartedAt: raw.pickStartedAt || '—',
+      pickResponsible: raw.pickResponsible || '—',
+      shipmentStatus: (raw.packedIndexes || []).length === 0 ? 'Ожидает' : ((raw.packedIndexes || []).length < raw.positions.length ? 'В работе' : 'Отгружен'),
+      isDeclineDialogOpen: this.state.isDeclineDialogOpen,
+      onOpenDeclineDialog: () => this.openDeclineDialog(),
+      onCloseDeclineDialog: () => this.closeDeclineDialog(),
+      declineReasonValue: this.state.declineReason,
+      onDeclineReasonChange: (e) => this.setState({ declineReason: e.target.value }),
+      onConfirmDecline: () => this.confirmDecline(),
+      isCancelDialogOpen: this.state.isCancelDialogOpen,
+      onOpenCancelDialog: () => this.openCancelDialog(),
+      onCloseCancelDialog: () => this.closeCancelDialog(),
+      cancelReasonValue: this.state.cancelReason,
+      onCancelReasonChange: (e) => this.setState({ cancelReason: e.target.value }),
+      onConfirmCancel: () => this.confirmCancel(),
+      stopClick: (e) => e.stopPropagation()
+    };
+  }
+}
+</script>
+</body>
+</html>

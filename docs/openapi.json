@@ -1,0 +1,4260 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ProЗапас API",
+    "version": "1.0.0",
+    "description": "HTTP-интерфейс между десктопным приложением и сервером.\n\nСистема обслуживает несколько складов одной компании. Каждый пользователь привязан к одному складу, и `warehouse_id` берётся из токена — в запросах он не передаётся. Сервер сам подставляет фильтр видимости, поэтому чужие заказы недостижимы.\n\nЗаказ — перемещение товара между двумя складами. Направление не хранится: для склада-заказчика заказ исходящий, для отправителя входящий.\n\nПодробности и обоснования — docs/api.md."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Вход",
+      "description": "Access 15 минут, refresh 30 дней с ротацией"
+    },
+    {
+      "name": "Служебные",
+      "description": "Живость, версия, справочники, сводка"
+    },
+    {
+      "name": "Заказы",
+      "description": "Перемещение товара между складами"
+    },
+    {
+      "name": "Отгрузка",
+      "description": "Заказы, где мы отправитель"
+    },
+    {
+      "name": "Приёмка",
+      "description": "Заказы, где мы получатель"
+    },
+    {
+      "name": "Остатки",
+      "description": "Баланс, журнал движений, ручные операции"
+    },
+    {
+      "name": "Справочник",
+      "description": "Номенклатура"
+    },
+    {
+      "name": "Пользователи",
+      "description": "Учётные записи и матрица прав"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Служебные"
+        ],
+        "summary": "Живость сервиса",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        },
+        "description": "Делает SELECT 1. Для оркестратора.",
+        "security": []
+      }
+    },
+    "/version": {
+      "get": {
+        "tags": [
+          "Служебные"
+        ],
+        "summary": "Версия сборки и схемы",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": "string",
+                      "example": "1.0.0"
+                    },
+                    "schema_revision": {
+                      "type": "string",
+                      "example": "fcddb596283f"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/bootstrap": {
+      "get": {
+        "tags": [
+          "Служебные"
+        ],
+        "summary": "Справочники одним запросом",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bootstrap"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "description": "Склады, роли, разделы, права, текущий пользователь. Один поход вместо шести при старте приложения."
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "tags": [
+          "Служебные"
+        ],
+        "summary": "Сводка для главной",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "description": "Счётчики считаются по своему складу."
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Вход"
+        ],
+        "summary": "Вход по логину и паролю",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "description": "Неверная пара — 401 без уточнения, что именно неверно: иначе это перебор учётных записей.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": [
+          "Вход"
+        ],
+        "summary": "Обновить пару токенов",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenPair"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "description": "Ротация: старый refresh отзывается. Предъявление отозванного отзывает всю цепочку пользователя.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "Вход"
+        ],
+        "summary": "Выход",
+        "responses": {
+          "204": {
+            "description": "Готово"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "Вход"
+        ],
+        "summary": "Текущий пользователь, склад и права",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "tags": [
+          "Заказы"
+        ],
+        "summary": "Список заказов",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "limit",
+                    "offset"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OrderListItem"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 128
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 50
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "example": 0
+                    }
+                  },
+                  "description": "Страница заказов"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Видны только заказы своего склада: from_warehouse_id = мой OR to_warehouse_id = мой. Подставляется сервером, задать нельзя.",
+        "parameters": [
+          {
+            "name": "tab",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "outgoing",
+                "incoming"
+              ]
+            },
+            "description": "outgoing — мы заказали и принимаем; incoming — у нас заказали и мы отгружаем"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "created",
+                  "processing",
+                  "shipped",
+                  "received",
+                  "declined",
+                  "cancelled"
+                ]
+              }
+            },
+            "description": "Можно несколько"
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Второй склад"
+          },
+          {
+            "name": "responsible_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "created_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "created_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Префикс номера заказа"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Заказы"
+        ],
+        "summary": "Создать заказ",
+        "responses": {
+          "201": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Склад-заказчик — наш, из токена. Наличие на чужом складе не проверяется: отправитель сам решит, сможет ли собрать.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Повтор с тем же ключом не создаёт второй заказ."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "tags": [
+          "Заказы"
+        ],
+        "summary": "Карточка заказа",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Версия документа для If-Match"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/orders/{id}/history": {
+      "get": {
+        "tags": [
+          "Заказы"
+        ],
+        "summary": "История статусов",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StatusEvent"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/orders/{id}/accept": {
+      "post": {
+        "tags": [
+          "Заказы"
+        ],
+        "summary": "Принять заказ",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        },
+        "description": "Только склад-отправитель, только в created. Одной транзакцией: статус processing, резерв остатка, пустая отгрузка.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Версия документа из ETag. Без заголовка — 428, с устаревшим — 409."
+          }
+        ]
+      }
+    },
+    "/orders/{id}/decline": {
+      "post": {
+        "tags": [
+          "Заказы"
+        ],
+        "summary": "Отклонить заказ",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        },
+        "description": "Только склад-отправитель, только в created.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Версия документа из ETag. Без заголовка — 428, с устаревшим — 409."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Заказы"
+        ],
+        "summary": "Отменить заказ",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        },
+        "description": "Только склад-заказчик и только пока у отгрузки нет ни одной коробки. Резерв, если был, снимается.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Версия документа из ETag. Без заголовка — 428, с устаревшим — 409."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shipments": {
+      "get": {
+        "tags": [
+          "Отгрузка"
+        ],
+        "summary": "Список отгрузок",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "limit",
+                    "offset"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ShipmentListItem"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 128
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 50
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "example": 0
+                    }
+                  },
+                  "description": "Страница отгрузок"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Заказы, где мы отправитель. Вес считается как unit_weight × qty по позициям.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "waiting",
+                "progress",
+                "done"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Префикс номера заказа"
+          },
+          {
+            "name": "weight_min",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "weight_max",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "created_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "created_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "shipped_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "shipped_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ]
+      }
+    },
+    "/shipments/{order_id}": {
+      "get": {
+        "tags": [
+          "Отгрузка"
+        ],
+        "summary": "Карточка отгрузки",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentDetail"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Версия документа для If-Match"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Две панели экрана: что осталось упаковать и что уже упаковано.",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/shipments/{order_id}/boxes": {
+      "post": {
+        "tags": [
+          "Отгрузка"
+        ],
+        "summary": "Упаковать коробку",
+        "responses": {
+          "201": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Box"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Количество и вес присылаются оба: сервер сверяет их между собой и с остатком по позиции. Штрихкод выдаёт сервер. Предела веса коробки нет.",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoxCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shipments/{order_id}/boxes/{box_id}": {
+      "delete": {
+        "tags": [
+          "Отгрузка"
+        ],
+        "summary": "Удалить коробку",
+        "responses": {
+          "204": {
+            "description": "Готово"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Этикетка не вышла или коробку переупаковали.",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "box_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/shipments/{order_id}/ship": {
+      "post": {
+        "tags": [
+          "Отгрузка"
+        ],
+        "summary": "Отгрузить",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        },
+        "description": "Частичная отгрузка разрешена — ответ содержит недостачу. Резерв снимается весь, списывается только упакованное.",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Версия документа из ETag. Без заголовка — 428, с устаревшим — 409."
+          }
+        ]
+      }
+    },
+    "/receipts": {
+      "get": {
+        "tags": [
+          "Приёмка"
+        ],
+        "summary": "Список приёмок",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "limit",
+                    "offset"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ReceiptListItem"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 128
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 50
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "example": 0
+                    }
+                  },
+                  "description": "Страница приёмок"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Заказы, где мы получатель и статус shipped.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "waiting",
+                "progress",
+                "done"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Префикс номера заказа"
+          },
+          {
+            "name": "weight_min",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "weight_max",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "created_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "created_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "shipped_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "shipped_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ]
+      }
+    },
+    "/receipts/{order_id}": {
+      "get": {
+        "tags": [
+          "Приёмка"
+        ],
+        "summary": "Карточка приёмки",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptDetail"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Версия документа для If-Match"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Отдаёт настоящие коробки отправителя — те самые, что он упаковал. Ничего не синтезируется. Расхождение считается, не хранится.",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/receipts/{order_id}/boxes/{barcode}/receive": {
+      "post": {
+        "tags": [
+          "Приёмка"
+        ],
+        "summary": "Отметить коробку принятой",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivedBox"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Ключ пути — штрихкод, а не внутренний id: сканер даёт именно его. Идемпотентен: коробка уже принята — возвращаем как есть.",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "barcode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiveBody"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Приёмка"
+        ],
+        "summary": "Отменить скан",
+        "responses": {
+          "204": {
+            "description": "Готово"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "barcode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/receipts/{order_id}/complete": {
+      "post": {
+        "tags": [
+          "Приёмка"
+        ],
+        "summary": "Завершить приёмку",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        },
+        "description": "Приходует принятые коробки. Коробки без отметки — зафиксированная недостача, заказ всё равно переходит в received.",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Версия документа из ETag. Без заголовка — 428, с устаревшим — 409."
+          }
+        ]
+      }
+    },
+    "/stock": {
+      "get": {
+        "tags": [
+          "Остатки"
+        ],
+        "summary": "Остатки по номенклатуре",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "limit",
+                    "offset"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/StockRow"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 128
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 50
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "example": 0
+                    }
+                  },
+                  "description": "Страница остатков"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Артикул или наименование"
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "below_min",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Только позиции ниже точки дозаказа"
+          },
+          {
+            "name": "in_stock",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "description": "Только позиции с остатком. По умолчанию true; с below_min=true снимать — нулевой остаток как раз и требует дозаказа"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ]
+      }
+    },
+    "/stock/summary": {
+      "get": {
+        "tags": [
+          "Остатки"
+        ],
+        "summary": "Четыре карточки экрана",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        }
+      }
+    },
+    "/stock/{item_id}": {
+      "get": {
+        "tags": [
+          "Остатки"
+        ],
+        "summary": "Остаток по складам",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockByWarehouse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/stock/{item_id}/movements": {
+      "get": {
+        "tags": [
+          "Остатки"
+        ],
+        "summary": "История движений",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "limit",
+                    "offset"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Movement"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 128
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 50
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "example": 0
+                    }
+                  },
+                  "description": "Страница движений"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "receipt",
+                "shipment",
+                "writeoff",
+                "recount",
+                "reserve",
+                "unreserve"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ]
+      }
+    },
+    "/stock/operations": {
+      "post": {
+        "tags": [
+          "Остатки"
+        ],
+        "summary": "Ручная операция",
+        "responses": {
+          "201": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Movement"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Для recount qty — не дельта, а новое значение остатка. У списания и корректировки документа нет: в истории показывается comment.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockOperation"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalog": {
+      "get": {
+        "tags": [
+          "Справочник"
+        ],
+        "summary": "Номенклатура",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "limit",
+                    "offset"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CatalogItem"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 128
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 50
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "example": 0
+                    }
+                  },
+                  "description": "Страница справочника"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Поиск q идёт по генерируемой колонке: наименование, артикул, код 1С.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "archived",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Справочник"
+        ],
+        "summary": "Добавить позицию",
+        "responses": {
+          "201": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalog/{id}": {
+      "get": {
+        "tags": [
+          "Справочник"
+        ],
+        "summary": "Карточка позиции",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Справочник"
+        ],
+        "summary": "Изменить позицию",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogItem"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogUpdate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalog/{id}/archive": {
+      "post": {
+        "tags": [
+          "Справочник"
+        ],
+        "summary": "Архивировать позицию",
+        "responses": {
+          "204": {
+            "description": "Готово"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Позиция с движениями не удаляется, а архивируется.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Список пользователей",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "limit",
+                    "offset"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/User"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 128
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 50
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "example": 0
+                    }
+                  },
+                  "description": "Страница пользователей"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "blocked"
+              ]
+            }
+          },
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Завести пользователя",
+        "responses": {
+          "201": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "login — отдельное поле, а не часть адреса почты. Логин и почта уникальны среди неудалённых.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Карточка пользователя",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Изменить пользователя",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Нельзя изменить собственную роль.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Удалить пользователя",
+        "responses": {
+          "204": {
+            "description": "Готово"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Мягкое удаление: проставляется deleted_at.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/users/{id}/block": {
+      "post": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Заблокировать",
+        "responses": {
+          "204": {
+            "description": "Готово"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Нельзя заблокировать себя и последнего активного администратора.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/users/{id}/unblock": {
+      "post": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Разблокировать",
+        "responses": {
+          "204": {
+            "description": "Готово"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/users/{id}/password": {
+      "post": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Сменить пароль",
+        "responses": {
+          "204": {
+            "description": "Готово"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordBody"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}/activity": {
+      "get": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "История действий",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "total",
+                    "limit",
+                    "offset"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AuditEntry"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 128
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 50
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "example": 0
+                    }
+                  },
+                  "description": "Страница истории"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "Из audit_log. Раздел и формулировку собирает клиент: он и так переводит статусы заказа, на сервере это была бы вторая копия тех же строк.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ]
+      }
+    },
+    "/permissions": {
+      "get": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Матрица прав",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Permission"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Пользователи"
+        ],
+        "summary": "Изменить матрицу прав",
+        "responses": {
+          "200": {
+            "description": "Успех",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Permission"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "description": "can_edit без can_view невозможен — отклоняется.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Permission"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Access-токен. Внутри — склад пользователя и права."
+      }
+    },
+    "schemas": {
+      "Problem": {
+        "type": "object",
+        "description": "RFC 9457",
+        "required": [
+          "type",
+          "title",
+          "status"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://prozapas/errors/insufficient-stock"
+          },
+          "title": {
+            "type": "string",
+            "example": "Недостаточно свободного остатка"
+          },
+          "status": {
+            "type": "integer",
+            "example": 409
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "WarehouseBrief": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "code": {
+            "type": "string",
+            "example": "128"
+          },
+          "name": {
+            "type": "string",
+            "example": "Склад №1"
+          },
+          "owner": {
+            "type": "string",
+            "nullable": true,
+            "example": "ООО «Сталкер Групп»"
+          },
+          "responsible": {
+            "$ref": "#/components/schemas/UserBrief",
+            "description": "Ответственный за склад. Карточка заказа показывает его для обеих сторон"
+          }
+        }
+      },
+      "UserBrief": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string",
+            "example": "Кузнецов И.А."
+          }
+        }
+      },
+      "Person": {
+        "type": "object",
+        "description": "Сотрудник для фильтра: только имя и склад, без прав и почты",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string",
+            "example": "Кузнецов Игорь Александрович"
+          },
+          "warehouse_id": {
+            "type": "integer"
+          }
+        }
+      },
+      "AuditEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "entity": {
+            "type": "string",
+            "enum": [
+              "order",
+              "shipment",
+              "receipt",
+              "catalog_item",
+              "stock_balance",
+              "user_account",
+              "role_permission"
+            ]
+          },
+          "entity_id": {
+            "type": "integer"
+          },
+          "action": {
+            "type": "string",
+            "example": "accepted"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Permission": {
+        "type": "object",
+        "required": [
+          "role",
+          "section",
+          "can_view",
+          "can_edit"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "example": "manager"
+          },
+          "section": {
+            "type": "string",
+            "enum": [
+              "orders",
+              "shipping",
+              "receiving",
+              "catalog",
+              "stock",
+              "users"
+            ]
+          },
+          "can_view": {
+            "type": "boolean"
+          },
+          "can_edit": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "login",
+          "password"
+        ],
+        "properties": {
+          "login": {
+            "type": "string",
+            "example": "i.kuznetsov"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          }
+        }
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "required": [
+          "refresh"
+        ],
+        "properties": {
+          "refresh": {
+            "type": "string"
+          }
+        }
+      },
+      "TokenPair": {
+        "type": "object",
+        "required": [
+          "access",
+          "refresh"
+        ],
+        "properties": {
+          "access": {
+            "type": "string",
+            "description": "JWT, 15 минут"
+          },
+          "refresh": {
+            "type": "string",
+            "description": "32 случайных байта, 30 дней"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "access": {
+            "type": "string"
+          },
+          "refresh": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "warehouse": {
+            "$ref": "#/components/schemas/WarehouseBrief"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          }
+        }
+      },
+      "Bootstrap": {
+        "type": "object",
+        "properties": {
+          "warehouses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WarehouseBrief"
+            }
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "orders",
+                "shipping",
+                "receiving",
+                "catalog",
+                "stock",
+                "users"
+              ]
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            }
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "warehouse": {
+            "$ref": "#/components/schemas/WarehouseBrief"
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Person"
+            },
+            "description": "Сотрудники для выпадающих фильтров. Здесь, а не в /users: тот доступен только администратору, а фильтр «Ответственный» нужен всем"
+          },
+          "catalog_version": {
+            "type": "string"
+          }
+        }
+      },
+      "Dashboard": {
+        "type": "object",
+        "properties": {
+          "in_work": {
+            "type": "integer",
+            "description": "Заказы в работе"
+          },
+          "outgoing_in_work": {
+            "type": "integer"
+          },
+          "incoming_in_work": {
+            "type": "integer"
+          },
+          "to_ship": {
+            "type": "integer",
+            "description": "Входящие, ждут сборки"
+          },
+          "to_receive": {
+            "type": "integer",
+            "description": "Исходящие в пути"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatusEvent"
+            }
+          }
+        }
+      },
+      "StatusEvent": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "integer"
+          },
+          "number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "processing",
+              "shipped",
+              "received",
+              "declined",
+              "cancelled"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OrderPosition": {
+        "type": "object",
+        "properties": {
+          "article": {
+            "type": "string",
+            "example": "100512"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string",
+            "example": "м"
+          },
+          "qty": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          }
+        }
+      },
+      "OrderListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "number": {
+            "type": "string",
+            "example": "2001"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "processing",
+              "shipped",
+              "received",
+              "declined",
+              "cancelled"
+            ]
+          },
+          "counterparty": {
+            "$ref": "#/components/schemas/WarehouseBrief",
+            "description": "Второй склад: отправитель или заказчик"
+          },
+          "positions_count": {
+            "type": "integer"
+          },
+          "responsible": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "shipped_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "accepted_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "processing",
+              "shipped",
+              "received",
+              "declined",
+              "cancelled"
+            ]
+          },
+          "from_warehouse": {
+            "$ref": "#/components/schemas/WarehouseBrief"
+          },
+          "to_warehouse": {
+            "$ref": "#/components/schemas/WarehouseBrief"
+          },
+          "responsible": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true,
+            "description": "Причина отказа или отмены — одно поле на оба случая"
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderPosition"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "shipped_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "accepted_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "version": {
+            "type": "integer"
+          }
+        }
+      },
+      "OrderCreate": {
+        "type": "object",
+        "required": [
+          "from_warehouse_id",
+          "positions"
+        ],
+        "properties": {
+          "from_warehouse_id": {
+            "type": "integer",
+            "description": "Склад-отправитель. Заказчик — наш, из токена"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "positions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "article",
+                "qty"
+              ],
+              "properties": {
+                "article": {
+                  "type": "string"
+                },
+                "qty": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "Дробное: в справочнике есть метры и листы"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ReasonBody": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ShipmentListItem": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "integer"
+          },
+          "number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "progress",
+              "done"
+            ]
+          },
+          "to_warehouse": {
+            "$ref": "#/components/schemas/WarehouseBrief"
+          },
+          "positions_total": {
+            "type": "integer"
+          },
+          "positions_packed": {
+            "type": "integer"
+          },
+          "weight_expected": {
+            "type": "number"
+          },
+          "weight_packed": {
+            "type": "number"
+          },
+          "responsible": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "shipped_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "ToPackLine": {
+        "type": "object",
+        "properties": {
+          "article": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "unit_weight": {
+            "type": "number",
+            "description": "Вес единицы. Экран упаковки считает по нему количество из показания весов"
+          },
+          "ordered": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "packed": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "remaining": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          }
+        }
+      },
+      "Box": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "barcode": {
+            "type": "string",
+            "example": "WH0012001100512",
+            "description": "WH{id склада-заказчика}{номер}{артикул}[-NN]. NN внутри артикула, первая коробка без суффикса"
+          },
+          "article": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "weight": {
+            "type": "number",
+            "example": 20.0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BoxCreate": {
+        "type": "object",
+        "required": [
+          "article",
+          "qty",
+          "weight"
+        ],
+        "properties": {
+          "article": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Присылается вместе с qty: сервер сверяет их между собой"
+          }
+        }
+      },
+      "ShipmentDetail": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/Order"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "progress",
+              "done"
+            ]
+          },
+          "responsible": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "to_pack": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToPackLine"
+            }
+          },
+          "boxes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Box"
+            }
+          },
+          "version": {
+            "type": "integer"
+          }
+        }
+      },
+      "ShipResult": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/Order"
+          },
+          "shortage": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "article": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "ordered": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "Дробное: в справочнике есть метры и листы"
+                },
+                "packed": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "Дробное: в справочнике есть метры и листы"
+                },
+                "remaining": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "Дробное: в справочнике есть метры и листы"
+                }
+              }
+            },
+            "description": "Непустой при частичной отгрузке"
+          }
+        }
+      },
+      "ReceiptListItem": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "integer"
+          },
+          "number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "progress",
+              "done"
+            ]
+          },
+          "from_warehouse": {
+            "$ref": "#/components/schemas/WarehouseBrief"
+          },
+          "boxes_total": {
+            "type": "integer"
+          },
+          "boxes_received": {
+            "type": "integer"
+          },
+          "weight_expected": {
+            "type": "number"
+          },
+          "weight_actual": {
+            "type": "number"
+          },
+          "responsible": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "shipped_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReceivedBox": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string"
+          },
+          "article": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Вес при отгрузке"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "actual_weight": {
+            "type": "number",
+            "nullable": true
+          },
+          "diff_kg": {
+            "type": "number",
+            "nullable": true,
+            "description": "Считается, не хранится"
+          },
+          "diff_percent": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "ReceiveBody": {
+        "type": "object",
+        "required": [
+          "actual_weight"
+        ],
+        "properties": {
+          "actual_weight": {
+            "type": "number",
+            "example": 19.8
+          }
+        }
+      },
+      "ReceiptDetail": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/Order"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "progress",
+              "done"
+            ]
+          },
+          "responsible": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "boxes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReceivedBox"
+            },
+            "description": "Настоящие коробки отправителя"
+          },
+          "version": {
+            "type": "integer"
+          }
+        }
+      },
+      "ReceiptResult": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/Order"
+          },
+          "missing": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReceivedBox"
+            },
+            "description": "Коробки без отметки о приёмке"
+          }
+        }
+      },
+      "StockRow": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "integer"
+          },
+          "article": {
+            "type": "string"
+          },
+          "code1c": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "qty": {
+            "type": "number",
+            "format": "double",
+            "description": "Итого по складам, если warehouse_id не задан"
+          },
+          "free": {
+            "type": "number",
+            "format": "double",
+            "description": "qty − reserved"
+          },
+          "reserved": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "min_qty": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "by_warehouse": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockShare"
+            },
+            "description": "Разбивка по складам. Нужна экрану «Новый заказ» в режиме «найти где есть»: он предлагает склад с наибольшим остатком, остальные раскрывает дочерними строками"
+          }
+        }
+      },
+      "StockShare": {
+        "type": "object",
+        "properties": {
+          "warehouse_id": {
+            "type": "integer"
+          },
+          "qty": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "free": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          }
+        },
+        "description": "Название склада клиент берёт из /bootstrap, здесь только id"
+      },
+      "StockByWarehouse": {
+        "type": "object",
+        "properties": {
+          "warehouse": {
+            "$ref": "#/components/schemas/WarehouseBrief"
+          },
+          "qty": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "free": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "reserved": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "min_qty": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          }
+        }
+      },
+      "StockSummary": {
+        "type": "object",
+        "properties": {
+          "positions": {
+            "type": "integer",
+            "description": "Всего позиций на складе"
+          },
+          "below_min": {
+            "type": "integer",
+            "description": "Требуют дозаказа"
+          },
+          "reserved": {
+            "type": "number"
+          },
+          "free": {
+            "type": "number"
+          }
+        }
+      },
+      "Movement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "receipt",
+              "shipment",
+              "writeoff",
+              "recount",
+              "reserve",
+              "unreserve"
+            ]
+          },
+          "delta": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "balance_after": {
+            "type": "number",
+            "format": "double",
+            "description": "Дробное: в справочнике есть метры и листы"
+          },
+          "doc_type": {
+            "type": "string",
+            "nullable": true,
+            "description": "Пусто у списания и корректировки"
+          },
+          "doc_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserBrief"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "StockOperation": {
+        "type": "object",
+        "required": [
+          "article",
+          "warehouse_id",
+          "type",
+          "qty"
+        ],
+        "properties": {
+          "article": {
+            "type": "string"
+          },
+          "warehouse_id": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "receipt",
+              "shipment",
+              "writeoff",
+              "recount"
+            ]
+          },
+          "qty": {
+            "type": "number",
+            "format": "double",
+            "description": "Для recount — новое значение остатка, а не дельта"
+          },
+          "comment": {
+            "type": "string"
+          }
+        }
+      },
+      "CatalogItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "article": {
+            "type": "string"
+          },
+          "code1c": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "unit_weight": {
+            "type": "number"
+          },
+          "is_archived": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CatalogCreate": {
+        "type": "object",
+        "required": [
+          "article",
+          "name",
+          "unit"
+        ],
+        "properties": {
+          "article": {
+            "type": "string"
+          },
+          "code1c": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "unit_weight": {
+            "type": "number",
+            "default": 0
+          }
+        }
+      },
+      "CatalogUpdate": {
+        "type": "object",
+        "properties": {
+          "code1c": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "unit_weight": {
+            "type": "number"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "login": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "example": "stockman"
+          },
+          "warehouse": {
+            "$ref": "#/components/schemas/WarehouseBrief"
+          },
+          "position": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "blocked"
+            ]
+          },
+          "hire_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "last_login_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "UserCreate": {
+        "type": "object",
+        "required": [
+          "full_name",
+          "login",
+          "email",
+          "password",
+          "role",
+          "warehouse_id"
+        ],
+        "properties": {
+          "full_name": {
+            "type": "string"
+          },
+          "login": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 6
+          },
+          "role": {
+            "type": "string"
+          },
+          "warehouse_id": {
+            "type": "integer"
+          },
+          "position": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "hire_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "UserUpdate": {
+        "type": "object",
+        "properties": {
+          "full_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "warehouse_id": {
+            "type": "integer"
+          },
+          "position": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "blocked"
+            ]
+          }
+        }
+      },
+      "PasswordBody": {
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "properties": {
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 6
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Тело или параметры не разобрались",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Нет токена, истёк или отозван",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Нет прав на раздел или запрещено правилом",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Объекта нет, удалён или принадлежит чужим складам",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Конфликт версий, недопустимый переход, нехватка остатка",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Unprocessable": {
+        "description": "Нарушено доменное правило",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "PreconditionRequired": {
+        "description": "Изменение без If-Match",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "База недоступна",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      }
+    }
+  }
+}

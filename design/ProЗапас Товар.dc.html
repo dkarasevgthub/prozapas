@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/styles.css">
+  <script src="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/_ds_bundle.js"></script>
+  <style>
+    html{overflow-y:scroll}
+    body{margin:0;background:var(--color-bg);color:var(--color-text)}
+    a{color:var(--color-accent-700)}
+    a:hover{color:var(--color-accent)}
+    .breadcrumb{font-size:18px;color:var(--color-neutral-600);margin-bottom:var(--space-2)}
+    .breadcrumb a{color:var(--color-neutral-600);text-decoration:none;cursor:pointer}
+    .breadcrumb a:hover{color:var(--color-accent-700)}
+    main h1{font-size:44px}
+    main h4{font-size:22px}
+    .stat .num{font-family:var(--font-heading);font-size:38px;line-height:1}
+    main .stat .num{font-size:36px}
+    .table{font-size:16px}
+    .table th{font-size:13px;white-space:normal;line-height:1.3;padding:var(--space-1) var(--space-2);vertical-align:bottom;overflow-wrap:break-word;text-transform:none;letter-spacing:normal;font-weight:600}
+    .table td{padding:var(--space-2);line-height:1.25;overflow-wrap:break-word}
+    tr.clickable{cursor:pointer}
+    tr.clickable:hover td{background:color-mix(in srgb, var(--color-text) 4%, transparent)}
+  </style>
+</helmet>
+<div style="display:flex;min-height:100vh;width:100%;font-family:var(--font-body);overflow-x:hidden">
+  <dc-import name="Sidebar" active="{{ sidebarActive }}" hint-size="200px,100%"></dc-import>
+  <main style="flex:1;min-width:0;padding:var(--space-8) var(--space-8) var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)">
+
+    <div class="breadcrumb"><a href="ProЗапас Главная.dc.html">ProЗапас</a> / <a href="{{ backHref }}">{{ backLabel }}</a> / {{ product.article }}</div>
+
+    <sc-if value="{{ hasProduct }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)">
+      <div>
+        <h1 style="margin-bottom:4px">{{ product.name }}</h1>
+        <div style="font-size:14px;color:var(--color-neutral-600)">Карточка товара</div>
+      </div>
+      <div style="display:flex;gap:var(--space-3)">
+        <button class="btn btn-secondary" onClick="{{ onOpenProductDialog }}">Редактировать товар</button>
+        <button class="btn btn-primary" onClick="{{ onOpenOpDialog }}">Провести операцию</button>
+      </div>
+    </div>
+
+    <div class="blueprint" style="padding:var(--space-6);display:flex;gap:var(--space-8);flex-wrap:wrap">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Артикул</div><div style="font-family:var(--font-heading);font-size:18px">{{ product.article }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Артикул 1С</div><div style="font-family:var(--font-heading);font-size:18px">{{ product.code1c }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Единица измерения</div><div style="font-family:var(--font-heading);font-size:18px">{{ product.unit }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Вес единицы</div><div style="font-family:var(--font-heading);font-size:18px">{{ product.unitWeight }} кг</div></div>
+    </div>
+
+    <div>
+      <h4 style="margin-bottom:var(--space-4)">Остатки на складе</h4>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-6)">
+        <div class="blueprint stat" style="padding:var(--space-4)">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:var(--space-2)">В наличии</div>
+          <div class="num" style="color:var(--color-accent-800)">{{ product.qty }}</div>
+          <div style="font-size:12px;color:var(--color-neutral-600);margin-top:var(--space-1)">{{ product.unit }}</div>
+        </div>
+        <div class="blueprint stat" style="padding:var(--space-4)">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:var(--space-2)">Свободно</div>
+          <div class="num" style="color:var(--color-accent-800)">{{ product.free }}</div>
+          <div style="font-size:12px;color:var(--color-neutral-600);margin-top:var(--space-1)">доступно к отгрузке</div>
+        </div>
+        <div class="blueprint stat" style="padding:var(--space-4)">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:var(--space-2)">Резерв</div>
+          <div class="num" style="color:var(--color-accent-800)">{{ product.reserved }}</div>
+          <div style="font-size:12px;color:var(--color-neutral-600);margin-top:var(--space-1)">под заказы клиентов</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="blueprint" style="padding:var(--space-4)">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <h4 style="margin-bottom:var(--space-3)">История движения</h4>
+      <div style="display:flex;align-items:end;gap:var(--space-4);flex-wrap:wrap;margin-bottom:var(--space-4)">
+        <div class="field" style="min-width:170px;margin:0">
+          <label>Операция</label>
+          <select class="input" value="{{ opFilterValue }}" onChange="{{ onOpFilterChange }}">
+            <option value="all">Все операции</option>
+            <option value="Приемка">Приемка</option>
+            <option value="Отгрузка">Отгрузка</option>
+            <option value="Списание">Списание</option>
+            <option value="Корректировка">Корректировка</option>
+          </select>
+        </div>
+        <div class="field" style="min-width:150px;margin:0">
+          <label>Дата от</label>
+          <input class="input" type="date" value="{{ dateFromValue }}" onChange="{{ onDateFromChange }}">
+        </div>
+        <div class="field" style="min-width:150px;margin:0">
+          <label>Дата до</label>
+          <input class="input" type="date" value="{{ dateToValue }}" onChange="{{ onDateToChange }}">
+        </div>
+        <button class="btn btn-ghost" onClick="{{ onResetFilters }}">Сбросить</button>
+      </div>
+      <table class="table" style="font-size:14px">
+        <thead><tr>
+          <th>Дата</th><th>Операция</th><th>Комментарий</th><th>Количество</th><th>Остаток после</th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ history }}" as="h" hint-placeholder-count="5">
+            <tr class="{{ h.rowClass }}" onClick="{{ h.onClick }}">
+              <td style="color:var(--color-neutral-600)">{{ h.date }}</td>
+              <td>{{ h.type }}</td>
+              <td style="color:var(--color-neutral-600)">{{ h.doc }}</td>
+              <td>{{ h.qtyText }}</td>
+              <td>{{ h.balance }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <sc-if value="{{ historyEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--space-2);padding:var(--space-6) var(--space-4);color:var(--color-neutral-600)">
+          <div style="font-size:13px">Ничего не найдено по этим условиям</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ historyShowPagination }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);margin-top:var(--space-4)">
+          <div style="font-size:13px;color:var(--color-neutral-600)">{{ historyRangeText }}</div>
+          <div style="display:flex;align-items:center;gap:var(--space-2)">
+            <button class="btn btn-secondary btn-icon" disabled="{{ historyPagePrevDisabled }}" onClick="{{ onHistoryPagePrev }}">‹</button>
+            <sc-for list="{{ historyPageNumbers }}" as="pn" hint-placeholder-count="3">
+              <button class="{{ pn.cls }}" onClick="{{ pn.onClick }}">{{ pn.n }}</button>
+            </sc-for>
+            <button class="btn btn-secondary btn-icon" disabled="{{ historyPageNextDisabled }}" onClick="{{ onHistoryPageNext }}">›</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ notFound }}" hint-placeholder-val="{{ false }}">
+    <div class="blueprint" style="flex:1">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--space-3);padding:var(--space-8) var(--space-4);color:var(--color-neutral-600)">
+        <h3 style="color:var(--color-text)">Товар не найден</h3>
+        <div style="font-size:13px;max-width:340px">Проверьте ссылку или вернитесь в справочник.</div>
+      </div>
+    </div>
+    </sc-if>
+
+  </main>
+
+  <sc-if value="{{ isProductDialogOpen }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" style="position:fixed" onClick="{{ onCloseProductDialog }}">
+<div class="dialog" style="background:var(--color-surface)" onClick="{{ stopClick }}">
+      <div class="dialog-title">Редактировать товар</div>
+      <div class="dialog-body">
+        <div class="field">
+          <label>Наименование</label>
+          <input class="input" type="text" value="{{ pfNameValue }}" onChange="{{ onPfNameChange }}">
+        </div>
+        <div class="field">
+          <label>Артикул</label>
+          <input class="input" type="text" value="{{ pfArticleValue }}" onChange="{{ onPfArticleChange }}">
+        </div>
+        <div class="field">
+          <label>Артикул 1С</label>
+          <input class="input" type="text" value="{{ pfCode1cValue }}" onChange="{{ onPfCode1cChange }}">
+        </div>
+        <div class="field">
+          <label>Единица измерения</label>
+          <input class="input" type="text" value="{{ pfUnitValue }}" onChange="{{ onPfUnitChange }}">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Вес единицы, кг</label>
+          <input class="input" type="number" min="0" value="{{ pfUnitWeightValue }}" onChange="{{ onPfUnitWeightChange }}">
+        </div>
+        <sc-if value="{{ pfError }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12px;color:var(--color-accent-800);margin-top:var(--space-2)">{{ pfErrorText }}</div>
+        </sc-if>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" onClick="{{ onCloseProductDialog }}">Отмена</button>
+        <button class="btn btn-primary" onClick="{{ onSubmitProduct }}">Сохранить</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isOpDialogOpen }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" style="position:fixed" onClick="{{ onCloseOpDialog }}">
+<div class="dialog" style="background:var(--color-surface)" onClick="{{ stopClick }}">
+      <div class="dialog-title">{{ opDialogTitle }}</div>
+      <div class="dialog-body">
+        <div class="field">
+          <label>Тип операции</label>
+          <select class="input" value="{{ opTypeValue }}" onChange="{{ onOpTypeChange }}">
+            <option value="Приемка">Приемка</option>
+            <option value="Отгрузка">Отгрузка</option>
+            <option value="Списание">Списание</option>
+            <option value="Корректировка">Корректировка (пересчёт остатка)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>{{ opQtyLabel }}, {{ product.unit }}</label>
+          <input class="input" type="number" min="0" value="{{ opQtyValue }}" onChange="{{ onOpQtyChange }}">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Комментарий</label>
+          <input class="input" type="text" placeholder="Причина операции" value="{{ opCommentValue }}" onChange="{{ onOpCommentChange }}">
+        </div>
+        <sc-if value="{{ opError }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12px;color:var(--color-accent-800);margin-top:var(--space-2)">{{ opErrorText }}</div>
+        </sc-if>
+      </div>
+      <div class="dialog-actions">
+        <sc-if value="{{ isEditing }}" hint-placeholder-val="{{ false }}">
+          <button class="btn btn-ghost" onClick="{{ onDeleteOp }}">Удалить</button>
+        </sc-if>
+        <button class="btn btn-secondary" onClick="{{ onCloseOpDialog }}">Отмена</button>
+        <button class="btn btn-primary" onClick="{{ onSubmitOp }}">{{ opSubmitLabel }}</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const PRODUCTS = [
+  { article: '100421', code1c: 'ТМЦ-00421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.', unitWeight: 0.02, qty: 2400, free: 2100, reserved: 300 },
+  { article: '100433', code1c: 'ТМЦ-00433', name: 'Гайка М8 ГОСТ 5915', unit: 'шт.', unitWeight: 0.01, qty: 410, free: 410, reserved: 0 },
+  { article: '201187', code1c: 'ТМЦ-01187', name: 'Подшипник 6205-2RS', unit: 'шт.', unitWeight: 0.08, qty: 54, free: 34, reserved: 20 },
+  { article: '201204', code1c: 'ТМЦ-01204', name: 'Ремень приводной А-1250', unit: 'шт.', unitWeight: 0.45, qty: 96, free: 84, reserved: 12 },
+  { article: '300087', code1c: 'ТМЦ-00087', name: 'Редуктор РЦД-350 в сборе', unit: 'шт.', unitWeight: 42.0, qty: 3, free: 0, reserved: 3 },
+  { article: '300091', code1c: 'ТМЦ-00091', name: 'Насос центробежный НЦ-40', unit: 'шт.', unitWeight: 18.5, qty: 11, free: 7, reserved: 4 },
+  { article: '100458', code1c: 'ТМЦ-00458', name: 'Лист стальной 2×1250×2500', unit: 'лист', unitWeight: 72.5, qty: 128, free: 128, reserved: 0 },
+  { article: '100477', code1c: 'ТМЦ-00477', name: 'Уголок стальной 50×50×5', unit: 'шт.', unitWeight: 4.5, qty: 210, free: 180, reserved: 30 },
+  { article: '100512', code1c: 'ТМЦ-00512', name: 'Труба стальная 32×2', unit: 'м', unitWeight: 1.6, qty: 640, free: 640, reserved: 0 },
+  { article: '300098', code1c: 'ТМЦ-00098', name: 'Электродвигатель АИР90', unit: 'шт.', unitWeight: 24.0, qty: 6, free: 4, reserved: 2 },
+  { article: '201340', code1c: 'ТМЦ-01340', name: 'Ремень клиновой Б-1400', unit: 'шт.', unitWeight: 0.35, qty: 54, free: 54, reserved: 0 },
+  { article: '100655', code1c: 'ТМЦ-00655', name: 'Шайба М8 ГОСТ 6402', unit: 'шт.', unitWeight: 0.005, qty: 5200, free: 5200, reserved: 0 },
+  { article: '100701', code1c: 'ТМЦ-00701', name: 'Винт М6×20 ГОСТ 17475', unit: 'шт.', unitWeight: 0.008, qty: 1800, free: 1600, reserved: 200 },
+  { article: '201412', code1c: 'ТМЦ-01412', name: 'Подшипник 6208-2RS', unit: 'шт.', unitWeight: 0.15, qty: 40, free: 28, reserved: 12 },
+  { article: '300133', code1c: 'ТМЦ-00133', name: 'Насос шестерённый НШ-10', unit: 'шт.', unitWeight: 6.2, qty: 9, free: 6, reserved: 3 },
+  { article: '100812', code1c: 'ТМЦ-00812', name: 'Швеллер 10П ГОСТ 8240', unit: 'м', unitWeight: 8.5, qty: 96, free: 96, reserved: 0 },
+  { article: '300159', code1c: 'ТМЦ-00159', name: 'Редуктор червячный РЧУ-125', unit: 'шт.', unitWeight: 18.7, qty: 4, free: 2, reserved: 2 },
+  { article: '100933', code1c: 'ТМЦ-00933', name: 'Гайка М10 ГОСТ 5915', unit: 'шт.', unitWeight: 0.015, qty: 3100, free: 3100, reserved: 0 },
+  { article: '201055', code1c: 'ТМЦ-01055', name: 'Муфта соединительная МУВП-40', unit: 'шт.', unitWeight: 2.1, qty: 14, free: 10, reserved: 4 }
+];
+
+function seedHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 100000;
+  return h;
+}
+
+const OPS = [
+  { type: 'Приемка', tagClass: 'tag-accent', sign: 1, docPrefix: 'Приемка №' },
+  { type: 'Отгрузка', tagClass: 'tag-outline', sign: -1, docPrefix: 'Отгрузка №' },
+  { type: 'Списание', tagClass: 'tag-neutral', sign: -1, docPrefix: 'Списание №' },
+  { type: 'Корректировка', tagClass: 'tag-neutral', sign: 1, docPrefix: 'Инвентаризация №' }
+];
+
+const TYPE_META = {
+  'Приемка': { mode: 'signed', sign: 1, label: 'Количество' },
+  'Отгрузка': { mode: 'signed', sign: -1, label: 'Количество' },
+  'Списание': { mode: 'signed', sign: -1, label: 'Количество к списанию' },
+  'Корректировка': { mode: 'balance', label: 'Фактический остаток' }
+};
+
+function buildHistory(product) {
+  const seed = seedHash(product.article);
+  let balance = product.qty;
+  const rows = [];
+  const today = new Date(2026, 6, 22);
+  for (let i = 0; i < 24; i++) {
+    const s = (seed + i * 37) % 1000;
+    const op = OPS[s % OPS.length];
+    const amount = Math.max(1, Math.round((s % 40) + (i === 5 ? 20 : 5)) * (product.unit === 'шт.' ? 1 : 1));
+    const delta = op.sign * amount;
+    const balanceAfter = balance;
+    balance = balance - delta;
+    const date = new Date(today);
+    date.setDate(date.getDate() - i * 4 - (s % 3));
+    const hh = String(8 + (s % 9)).padStart(2, '0');
+    const mm = String((s * 7) % 60).padStart(2, '0');
+    rows.push({
+      id: 's' + product.article + '-' + i,
+      rawDate: date,
+      date: date.toLocaleDateString('ru-RU') + ' ' + hh + ':' + mm,
+      type: op.type,
+      doc: op.docPrefix + (1100 + ((seed + i * 13) % 200)),
+      qtyRaw: Math.abs(delta),
+      comment: '',
+      qtyText: (delta >= 0 ? '+' : '') + delta + ' ' + product.unit,
+      balance: balanceAfter + ' ' + product.unit,
+      isSeeded: true
+    });
+  }
+  return rows;
+}
+
+class Component extends DCLogic {
+  state = {
+    opFilter: 'all', dateFrom: '', dateTo: '', historyPage: 1, historyPageSize: 10,
+    adjustments: {}, manualHistory: {}, nextManualId: 1, seedOverrides: {},
+    isOpDialogOpen: false, opType: 'Списание', opQty: '', opComment: '', opError: false, opErrorText: '', editingId: null, editingIsSeeded: false,
+    productOverrides: {}, isProductDialogOpen: false,
+    pfName: '', pfArticle: '', pfCode1c: '', pfUnit: '', pfUnitWeight: '', pfError: false, pfErrorText: ''
+  };
+
+  setFilter(patch) { this.setState({ ...patch, historyPage: 1 }); }
+  resetFilters() { this.setState({ opFilter: 'all', dateFrom: '', dateTo: '', historyPage: 1 }); }
+  goToHistoryPage(n) { this.setState({ historyPage: n }); }
+
+  openProductDialog(product) {
+    this.setState({
+      isProductDialogOpen: true,
+      pfName: product.name, pfArticle: product.article, pfCode1c: product.code1c,
+      pfUnit: product.unit, pfUnitWeight: String(product.unitWeight), pfError: false
+    });
+  }
+  closeProductDialog() { this.setState({ isProductDialogOpen: false }); }
+
+  submitProduct(articleKey) {
+    if (!this.state.pfName.trim() || !this.state.pfArticle.trim()) {
+      this.setState({ pfError: true, pfErrorText: 'Заполните наименование и артикул.' });
+      return;
+    }
+    const weightNum = parseFloat(this.state.pfUnitWeight);
+    if (isNaN(weightNum) || weightNum < 0) {
+      this.setState({ pfError: true, pfErrorText: 'Введите корректный вес единицы.' });
+      return;
+    }
+    this.setState(st => ({
+      productOverrides: {
+        ...st.productOverrides,
+        [articleKey]: {
+          name: st.pfName.trim(), article: st.pfArticle.trim(), code1c: st.pfCode1c.trim(),
+          unit: st.pfUnit.trim(), unitWeight: weightNum
+        }
+      },
+      isProductDialogOpen: false
+    }));
+  }
+
+  openOpDialog() { this.setState({ isOpDialogOpen: true, opType: 'Списание', opQty: '', opComment: '', opError: false, editingId: null }); }
+  closeOpDialog() { this.setState({ isOpDialogOpen: false }); }
+
+  openEditDialog(entry) {
+    this.setState({
+      isOpDialogOpen: true, opType: entry.type, opQty: String(entry.qtyRaw), opComment: entry.comment || entry.doc || '',
+      opError: false, editingId: entry.id, editingIsSeeded: !!entry.isSeeded
+    });
+  }
+
+  deleteOp(article) {
+    if (this.state.editingIsSeeded) {
+      this.setState(st => ({
+        seedOverrides: { ...st.seedOverrides, [article]: { ...(st.seedOverrides[article] || {}), [st.editingId]: { deleted: true } } },
+        isOpDialogOpen: false
+      }));
+      return;
+    }
+    this.setState(st => {
+      const list = (st.manualHistory[article] || []).filter(e => e.id !== st.editingId);
+      return {
+        manualHistory: { ...st.manualHistory, [article]: list },
+        adjustments: { ...st.adjustments, [article]: list.reduce((sum, e) => sum + e.delta, 0) },
+        isOpDialogOpen: false
+      };
+    });
+  }
+
+  submitOp(product) {
+    const qtyNum = parseFloat(this.state.opQty);
+    if (isNaN(qtyNum) || qtyNum < 0) {
+      this.setState({ opError: true, opErrorText: 'Введите корректное количество.' });
+      return;
+    }
+    if (this.state.editingIsSeeded) {
+      const id = this.state.editingId;
+      const type = this.state.opType;
+      const comment = this.state.opComment;
+      const meta = TYPE_META[type];
+      const delta = meta.mode === 'balance' ? (qtyNum - product.qty) : meta.sign * qtyNum;
+      this.setState(st => ({
+        seedOverrides: {
+          ...st.seedOverrides,
+          [product.article]: {
+            ...(st.seedOverrides[product.article] || {}),
+            [id]: { type, qtyRaw: qtyNum, comment, qtyText: (delta >= 0 ? '+' : '') + delta + ' ' + product.unit }
+          }
+        },
+        isOpDialogOpen: false
+      }));
+      return;
+    }
+    const editingId = this.state.editingId;
+    const existingList = this.state.manualHistory[product.article] || [];
+    const existingEntry = editingId ? existingList.find(e => e.id === editingId) : null;
+    const baseQty = product.qty - (existingEntry ? existingEntry.delta : 0);
+    const meta = TYPE_META[this.state.opType];
+    let delta;
+    if (meta.mode === 'balance') {
+      delta = qtyNum - baseQty;
+    } else {
+      delta = meta.sign * qtyNum;
+      if (delta < 0 && -delta > baseQty) {
+        this.setState({ opError: true, opErrorText: 'Нельзя списать/отгрузить больше, чем есть в наличии.' });
+        return;
+      }
+    }
+    const newBalance = baseQty + delta;
+    const now = new Date();
+    const entry = {
+      id: existingEntry ? existingEntry.id : this.state.nextManualId,
+      rawDate: existingEntry ? existingEntry.rawDate : now,
+      date: existingEntry ? existingEntry.date : (now.toLocaleDateString('ru-RU') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')),
+      type: this.state.opType,
+      comment: this.state.opComment,
+      doc: this.state.opComment ? this.state.opComment : (this.state.opType + ' (ручная)'),
+      qtyRaw: qtyNum,
+      delta,
+      qtyText: (delta >= 0 ? '+' : '') + delta.toFixed(product.unit === 'шт.' ? 0 : 2) + ' ' + product.unit,
+      balance: newBalance.toFixed(product.unit === 'шт.' ? 0 : 2) + ' ' + product.unit,
+      isManual: true
+    };
+    this.setState(st => {
+      const list = existingEntry
+        ? (st.manualHistory[product.article] || []).map(e => e.id === entry.id ? entry : e)
+        : [entry, ...(st.manualHistory[product.article] || [])];
+      return {
+        manualHistory: { ...st.manualHistory, [product.article]: list },
+        adjustments: { ...st.adjustments, [product.article]: list.reduce((sum, e) => sum + e.delta, 0) },
+        nextManualId: existingEntry ? st.nextManualId : st.nextManualId + 1,
+        isOpDialogOpen: false
+      };
+    });
+  }
+
+  renderVals() {
+    const params = new URLSearchParams(window.location.search);
+    const article = params.get('article') || '';
+    const from = params.get('from') === 'stock' ? 'stock' : 'catalog';
+    const baseProduct = PRODUCTS.find(p => p.article === article);
+    const adjustment = baseProduct ? (this.state.adjustments[baseProduct.article] || 0) : 0;
+    const productOverride = baseProduct ? this.state.productOverrides[baseProduct.article] : null;
+    const product = baseProduct ? { ...baseProduct, ...productOverride, qty: baseProduct.qty + adjustment, free: baseProduct.free + adjustment } : null;
+    const { opFilter, dateFrom, dateTo, historyPage, historyPageSize } = this.state;
+
+    const overrides = product ? (this.state.seedOverrides[product.article] || {}) : {};
+    const manualRows = product ? (this.state.manualHistory[product.article] || []).map(e => ({
+      ...e,
+      rowClass: 'clickable',
+      onClick: () => this.openEditDialog(e)
+    })) : [];
+    const seededRows = product ? buildHistory(baseProduct)
+      .filter(h => !(overrides[h.id] && overrides[h.id].deleted))
+      .map(h => {
+        const ov = overrides[h.id];
+        const merged = ov ? { ...h, ...ov, doc: ov.comment ? ov.comment : h.doc } : h;
+        return { ...merged, rowClass: 'clickable', onClick: () => this.openEditDialog(merged) };
+      }) : [];
+    const allHistory = product ? manualRows.concat(seededRows).filter(h => {
+      if (opFilter !== 'all' && h.type !== opFilter) return false;
+      if (dateFrom && h.rawDate < new Date(dateFrom)) return false;
+      if (dateTo && h.rawDate > new Date(dateTo)) return false;
+      return true;
+    }) : [];
+    const historyTotalPages = Math.max(1, Math.ceil(allHistory.length / historyPageSize));
+    const historyPageClamped = Math.min(historyPage, historyTotalPages);
+    const history = allHistory.slice((historyPageClamped - 1) * historyPageSize, historyPageClamped * historyPageSize);
+    const historyPageNumbers = Array.from({ length: historyTotalPages }, (_, i) => ({
+      n: i + 1,
+      cls: 'btn btn-icon ' + (i + 1 === historyPageClamped ? 'btn-primary' : 'btn-secondary'),
+      onClick: () => this.goToHistoryPage(i + 1)
+    }));
+
+    return {
+      sidebarActive: from,
+      backHref: from === 'stock' ? 'ProЗапас Остатки.dc.html' : 'ProЗапас Справочник.dc.html',
+      backLabel: from === 'stock' ? 'Остатки' : 'Справочник',
+      hasProduct: !!product,
+      notFound: !product,
+      product: product || { article: '', code1c: '', name: '', unit: '', unitWeight: '', qty: '', free: '', reserved: '' },
+      history,
+      historyEmpty: history.length === 0,
+      onOpenOpDialog: () => this.openOpDialog(),
+      onCloseOpDialog: () => this.closeOpDialog(),
+      stopClick: (e) => e.stopPropagation(),
+      isOpDialogOpen: this.state.isOpDialogOpen,
+      opTypeValue: this.state.opType,
+      onOpTypeChange: (e) => this.setState({ opType: e.target.value, opError: false }),
+      opQtyLabel: TYPE_META[this.state.opType].label,
+      opQtyValue: this.state.opQty,
+      onOpQtyChange: (e) => this.setState({ opQty: e.target.value, opError: false }),
+      opCommentValue: this.state.opComment,
+      onOpCommentChange: (e) => this.setState({ opComment: e.target.value }),
+      opError: this.state.opError,
+      opErrorText: this.state.opErrorText,
+      onSubmitOp: () => product && this.submitOp(product),
+      onDeleteOp: () => product && this.deleteOp(product.article),
+      onOpenProductDialog: () => product && this.openProductDialog(product),
+      onCloseProductDialog: () => this.closeProductDialog(),
+      isProductDialogOpen: this.state.isProductDialogOpen,
+      pfNameValue: this.state.pfName,
+      onPfNameChange: (e) => this.setState({ pfName: e.target.value, pfError: false }),
+      pfArticleValue: this.state.pfArticle,
+      onPfArticleChange: (e) => this.setState({ pfArticle: e.target.value, pfError: false }),
+      pfCode1cValue: this.state.pfCode1c,
+      onPfCode1cChange: (e) => this.setState({ pfCode1c: e.target.value, pfError: false }),
+      pfUnitValue: this.state.pfUnit,
+      onPfUnitChange: (e) => this.setState({ pfUnit: e.target.value, pfError: false }),
+      pfUnitWeightValue: this.state.pfUnitWeight,
+      onPfUnitWeightChange: (e) => this.setState({ pfUnitWeight: e.target.value, pfError: false }),
+      pfError: this.state.pfError,
+      pfErrorText: this.state.pfErrorText,
+      onSubmitProduct: () => baseProduct && this.submitProduct(baseProduct.article),
+      isEditing: !!this.state.editingId,
+      opDialogTitle: this.state.editingId ? 'Редактировать операцию' : 'Провести операцию',
+      opSubmitLabel: this.state.editingId ? 'Сохранить' : 'Провести',
+      opFilterValue: opFilter,
+      onOpFilterChange: (e) => this.setFilter({ opFilter: e.target.value }),
+      dateFromValue: dateFrom,
+      onDateFromChange: (e) => this.setFilter({ dateFrom: e.target.value }),
+      dateToValue: dateTo,
+      onDateToChange: (e) => this.setFilter({ dateTo: e.target.value }),
+      onResetFilters: () => this.resetFilters(),
+      historyPageNumbers,
+      historyShowPagination: historyTotalPages > 1,
+      historyPagePrevDisabled: historyPageClamped <= 1,
+      historyPageNextDisabled: historyPageClamped >= historyTotalPages,
+      onHistoryPagePrev: () => this.goToHistoryPage(historyPageClamped - 1),
+      onHistoryPageNext: () => this.goToHistoryPage(historyPageClamped + 1),
+      historyRangeText: allHistory.length === 0 ? '' : ((historyPageClamped - 1) * historyPageSize + 1) + '–' + Math.min(historyPageClamped * historyPageSize, allHistory.length) + ' из ' + allHistory.length
+    };
+  }
+}
+</script>
+</body>
+</html>

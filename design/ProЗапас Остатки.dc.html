@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/styles.css">
+  <script src="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/_ds_bundle.js"></script>
+  <style>
+    html{overflow-y:scroll}
+    body{margin:0;background:var(--color-bg);color:var(--color-text)}
+    a{color:var(--color-accent-700)}
+    a:hover{color:var(--color-accent)}
+    .stat .num{font-family:var(--font-heading);font-size:38px;line-height:1}
+    .table{font-size:16px}
+    .table th{font-size:13px;white-space:normal;line-height:1.3;padding:var(--space-1) var(--space-2);vertical-align:bottom;overflow-wrap:break-word;text-transform:none;letter-spacing:normal;font-weight:600}
+    .table td{padding:var(--space-2);line-height:1.25;overflow-wrap:break-word}
+    .breadcrumb{font-size:18px;color:var(--color-neutral-600);margin-bottom:var(--space-2)}
+    main h1{font-size:44px}
+    main .stat .num{font-size:40px}
+    .clickable{cursor:pointer;transition:border-color .12s ease,background .12s ease}
+    tr.clickable:hover td{background:color-mix(in srgb, var(--color-text) 4%, transparent)}
+  </style>
+</helmet>
+<div style="display:flex;min-height:100vh;width:100%;font-family:var(--font-body);overflow-x:hidden">
+  <dc-import name="Sidebar" active="stock" hint-size="200px,100%"></dc-import>
+  <main style="flex:1;min-width:0;padding:var(--space-8) var(--space-8) var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)">
+    <div class="breadcrumb">ProЗапас / Остатки</div>
+    <div>
+      <h1 style="margin-bottom:4px">Остатки</h1>
+      <div style="font-size:14px;color:var(--color-neutral-600)">Складские остатки по номенклатуре</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-6)">
+      <sc-for list="{{ stockStats }}" as="s" hint-placeholder-count="4">
+        <div class="blueprint stat" style="padding:var(--space-4)">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:var(--space-2)">{{ s.label }}</div>
+          <div class="num" style="color:var(--color-accent-800)">{{ s.value }}</div>
+          <div style="font-size:12px;color:var(--color-neutral-600);margin-top:var(--space-1)">{{ s.hint }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;align-items:center;gap:var(--space-4)">
+      <div class="field" style="flex:1;max-width:360px;margin:0">
+        <input class="input" type="text" placeholder="Поиск по артикулу или наименованию" value="{{ searchValue }}" onChange="{{ onSearchChange }}">
+      </div>
+    </div>
+    <div class="blueprint" style="padding:var(--space-4)">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <table class="table" style="font-size:14px">
+        <thead>
+          <tr><th>Наименование</th><th>Артикул</th><th>Артикул 1С</th><th>Ед. изм.</th><th>В наличии</th><th>Свободно</th><th>Резерв</th></tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ stockItems }}" as="r" hint-placeholder-count="7">
+            <tr class="clickable" onClick="{{ r.onClick }}">
+              <td>{{ r.name }}</td>
+              <td style="color:var(--color-neutral-600)">{{ r.article }}</td>
+              <td style="color:var(--color-neutral-600)">{{ r.code1c }}</td>
+              <td>{{ r.unit }}</td>
+              <td>{{ r.qty }}</td>
+              <td>{{ r.free }}</td>
+              <td style="color:var(--color-neutral-600)">{{ r.reserved }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <sc-if value="{{ listShowPagination }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);margin-top:var(--space-4)">
+          <div style="font-size:13px;color:var(--color-neutral-600)">{{ listRangeText }}</div>
+          <div style="display:flex;align-items:center;gap:var(--space-2)">
+            <button class="btn btn-secondary btn-icon" disabled="{{ listPagePrevDisabled }}" onClick="{{ onListPagePrev }}">‹</button>
+            <sc-for list="{{ listPageNumbers }}" as="pn" hint-placeholder-count="3">
+              <button class="{{ pn.cls }}" onClick="{{ pn.onClick }}">{{ pn.n }}</button>
+            </sc-for>
+            <button class="btn btn-secondary btn-icon" disabled="{{ listPageNextDisabled }}" onClick="{{ onListPageNext }}">›</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+  <sc-if value="{{ isDialogOpen }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" style="position:fixed" onClick="{{ closeDialog }}">
+<div class="dialog" style="background:var(--color-surface)" onClick="{{ stopClick }}">
+      <div class="dialog-title">{{ dialogTitle }}</div>
+      <div class="dialog-body">
+        <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+          <sc-for list="{{ dialogRows }}" as="dr" hint-placeholder-count="5">
+            <div style="display:flex;justify-content:space-between;gap:var(--space-4);font-size:13px;padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider)">
+              <span style="color:var(--color-neutral-600)">{{ dr.k }}</span>
+              <span style="text-align:right">{{ dr.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" onClick="{{ closeDialog }}">Закрыть</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { dialogTitle: null, dialogRows: [], listPage: 1, pageSize: 20, search: '' };
+  openDialog(title, rows) { this.setState({ dialogTitle: title, dialogRows: rows }); }
+  closeDialogFn() { this.setState({ dialogTitle: null, dialogRows: [] }); }
+  onSearch(v) { this.setState({ search: v, listPage: 1 }); }
+
+  ROW_HEIGHT = 41;
+  RESERVED_HEIGHT = 480;
+
+  computePageSize() {
+    const fit = Math.floor((window.innerHeight - this.RESERVED_HEIGHT) / this.ROW_HEIGHT);
+    return Math.max(5, fit);
+  }
+
+  componentDidMount() {
+    this.setState({ pageSize: this.computePageSize() });
+    this._onResize = () => this.setState({ pageSize: this.computePageSize() });
+    window.addEventListener('resize', this._onResize);
+  }
+
+  componentWillUnmount() {
+    if (this._onResize) window.removeEventListener('resize', this._onResize);
+  }
+
+  goToListPage(n) { this.setState({ listPage: n }); }
+
+  renderVals() {
+    const stockStats = [
+      { label: 'Всего позиций', value: '128', hint: 'на складе' },
+      { label: 'Ниже минимума', value: '12', hint: 'требуют дозаказа' },
+      { label: 'В резерве', value: '146', hint: 'под заказы клиентов' },
+      { label: 'Свободный остаток', value: '1 138', hint: 'доступно к отгрузке' }
+    ];
+    const stockData = [
+      { article: '100421', code1c: 'ТМЦ-00421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.', qty: 2400, free: 2100, reserved: 300 },
+      { article: '100433', code1c: 'ТМЦ-00433', name: 'Гайка М8 ГОСТ 5915', unit: 'шт.', qty: 410, free: 410, reserved: 0 },
+      { article: '201187', code1c: 'ТМЦ-01187', name: 'Подшипник 6205-2RS', unit: 'шт.', qty: 54, free: 34, reserved: 20 },
+      { article: '201204', code1c: 'ТМЦ-01204', name: 'Ремень приводной А-1250', unit: 'шт.', qty: 96, free: 84, reserved: 12 },
+      { article: '300087', code1c: 'ТМЦ-00087', name: 'Редуктор РЦД-350 в сборе', unit: 'шт.', qty: 3, free: 0, reserved: 3 },
+      { article: '300091', code1c: 'ТМЦ-00091', name: 'Насос центробежный НЦ-40', unit: 'шт.', qty: 11, free: 7, reserved: 4 },
+      { article: '100458', code1c: 'ТМЦ-00458', name: 'Лист стальной 2×1250×2500', unit: 'лист', qty: 128, free: 128, reserved: 0 },
+      { article: '100477', code1c: 'ТМЦ-00477', name: 'Уголок стальной 50×50×5', unit: 'шт.', qty: 210, free: 180, reserved: 30 },
+      { article: '100512', code1c: 'ТМЦ-00512', name: 'Труба стальная 32×2', unit: 'м', qty: 640, free: 640, reserved: 0 },
+      { article: '300098', code1c: 'ТМЦ-00098', name: 'Электродвигатель АИР90', unit: 'шт.', qty: 6, free: 4, reserved: 2 },
+      { article: '201340', code1c: 'ТМЦ-01340', name: 'Ремень клиновой Б-1400', unit: 'шт.', qty: 54, free: 54, reserved: 0 },
+      { article: '100655', code1c: 'ТМЦ-00655', name: 'Шайба М8 ГОСТ 6402', unit: 'шт.', qty: 5200, free: 5200, reserved: 0 },
+      { article: '100701', code1c: 'ТМЦ-00701', name: 'Винт М6×20 ГОСТ 17475', unit: 'шт.', qty: 1800, free: 1600, reserved: 200 },
+      { article: '201412', code1c: 'ТМЦ-01412', name: 'Подшипник 6208-2RS', unit: 'шт.', qty: 40, free: 28, reserved: 12 },
+      { article: '300133', code1c: 'ТМЦ-00133', name: 'Насос шестерённый НШ-10', unit: 'шт.', qty: 9, free: 6, reserved: 3 },
+      { article: '100812', code1c: 'ТМЦ-00812', name: 'Швеллер 10П ГОСТ 8240', unit: 'м', qty: 96, free: 96, reserved: 0 },
+      { article: '300159', code1c: 'ТМЦ-00159', name: 'Редуктор червячный РЧУ-125', unit: 'шт.', qty: 4, free: 2, reserved: 2 },
+      { article: '100933', code1c: 'ТМЦ-00933', name: 'Гайка М10 ГОСТ 5915', unit: 'шт.', qty: 3100, free: 3100, reserved: 0 },
+      { article: '201055', code1c: 'ТМЦ-01055', name: 'Муфта соединительная МУВП-40', unit: 'шт.', qty: 14, free: 10, reserved: 4 }
+    ];
+    const allStockItems = stockData.filter(r => {
+      const q = this.state.search.trim().toLowerCase();
+      if (!q) return true;
+      return r.name.toLowerCase().includes(q) || r.article.toLowerCase().includes(q) || r.code1c.toLowerCase().includes(q);
+    }).map(r => ({
+      ...r,
+      onClick: () => { window.location.href = 'ProЗапас Товар.dc.html?article=' + r.article + '&from=stock'; }
+    }));
+    const pageSize = this.state.pageSize;
+    const listTotalPages = Math.max(1, Math.ceil(allStockItems.length / pageSize));
+    const listPage = Math.min(this.state.listPage, listTotalPages);
+    const stockItems = allStockItems.slice((listPage - 1) * pageSize, listPage * pageSize);
+    const listPageNumbers = Array.from({ length: listTotalPages }, (_, i) => ({
+      n: i + 1,
+      cls: 'btn btn-icon ' + (i + 1 === listPage ? 'btn-primary' : 'btn-secondary'),
+      onClick: () => this.goToListPage(i + 1)
+    }));
+    return {
+      stockStats, stockItems,
+      listPageNumbers,
+      listShowPagination: listTotalPages > 1,
+      listPagePrevDisabled: listPage <= 1,
+      listPageNextDisabled: listPage >= listTotalPages,
+      onListPagePrev: () => this.goToListPage(listPage - 1),
+      onListPageNext: () => this.goToListPage(listPage + 1),
+      listRangeText: allStockItems.length === 0 ? '' : ((listPage - 1) * pageSize + 1) + '–' + Math.min(listPage * pageSize, allStockItems.length) + ' из ' + allStockItems.length,
+      searchValue: this.state.search,
+      onSearchChange: (e) => this.onSearch(e.target.value),
+      isDialogOpen: !!this.state.dialogTitle,
+      dialogTitle: this.state.dialogTitle,
+      dialogRows: this.state.dialogRows,
+      closeDialog: () => this.closeDialogFn(),
+      stopClick: (e) => e.stopPropagation()
+    };
+  }
+}
+</script>
+</body>
+</html>

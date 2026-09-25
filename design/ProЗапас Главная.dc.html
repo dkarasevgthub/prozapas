@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/styles.css">
+  <script src="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/_ds_bundle.js"></script>
+  <style>
+    html{overflow-y:scroll}
+    body{margin:0;background:var(--color-bg);color:var(--color-text)}
+    a{color:var(--color-accent-700)}
+    a:hover{color:var(--color-accent)}
+    .breadcrumb{font-size:18px;color:var(--color-neutral-600);margin-bottom:var(--space-2)}
+    main h1{font-size:44px}
+    main h4{font-size:22px}
+    main .stat .num{font-size:40px;font-family:var(--font-heading);line-height:1}
+    .clickable{cursor:pointer;transition:border-color .12s ease,background .12s ease}
+    .stat.clickable:hover{border-color:var(--color-accent)}
+    .eventrow.clickable:hover{background:var(--color-accent-100)}
+    .card-link{display:block;text-decoration:none;color:inherit}
+  </style>
+</helmet>
+<div style="display:flex;min-height:100vh;width:100%;font-family:var(--font-body);overflow-x:hidden">
+  <dc-import name="Sidebar" active="home" hint-size="200px,100%"></dc-import>
+  <main style="flex:1;min-width:0;padding:var(--space-8) var(--space-8) var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)">
+    <div class="breadcrumb">ProЗапас / Главная</div>
+    <div>
+      <h1 style="margin-bottom:4px">Здравствуйте, {{ firstName }}</h1>
+      <div style="font-size:14px;color:var(--color-neutral-600)">{{ today }} · {{ roleLabel }} · ООО «Сталкер Групп»</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-6)">
+      <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+        <a class="blueprint stat clickable card-link" style="padding:var(--space-4)" href="{{ s.href }}">
+          <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+          <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600);margin-bottom:var(--space-2)">{{ s.label }}</div>
+          <div class="num" style="color:var(--color-accent-800)">{{ s.value }}</div>
+          <div style="font-size:12px;color:var(--color-neutral-600);margin-top:var(--space-1)">{{ s.hint }}</div>
+        </a>
+      </sc-for>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:var(--space-6);align-items:start">
+      <div class="blueprint" style="padding:var(--space-6)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);margin-bottom:var(--space-4)">
+          <h4 style="margin:0">Текущие задачи</h4>
+          <span style="font-family:var(--font-heading);font-size:16px;color:var(--color-accent-800)">{{ tasksCount }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ tasks }}" as="t" hint-placeholder-count="5">
+            <a class="eventrow clickable card-link" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-2);margin:0 calc(var(--space-2) * -1);border-bottom:1px solid var(--color-divider)" href="{{ t.href }}">
+              <span class="tag {{ t.tagClass }}" style="flex:none;width:88px;text-align:center">{{ t.tag }}</span>
+              <div style="flex:1;min-width:0;font-size:14px">{{ t.text }}</div>
+              <div style="font-size:12px;color:var(--color-neutral-600);flex:none;white-space:nowrap">{{ t.sub }}</div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-500)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="m9 18 6-6-6-6"></path></svg>
+            </a>
+          </sc-for>
+          <sc-if value="{{ tasksEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:13px;color:var(--color-neutral-600);padding:var(--space-3) 0">Активных задач нет.</div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div class="blueprint" style="padding:var(--space-6)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4)">
+          <h4 style="margin:0">Последние действия</h4>
+          <a href="ProЗапас Заказы.dc.html" style="font-size:13px">Все заказы</a>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ events }}" as="ev" hint-placeholder-count="6">
+            <a class="eventrow clickable card-link" style="display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-2);margin:0 calc(var(--space-2) * -1);border-bottom:1px solid var(--color-divider)" href="{{ ev.href }}">
+              <span class="tag {{ ev.tagClass }}" style="flex:none;width:88px;text-align:center">{{ ev.tag }}</span>
+              <div style="flex:1;font-size:14px">{{ ev.text }}</div>
+              <div style="font-size:12px;color:var(--color-neutral-600);flex:none;white-space:nowrap">{{ ev.time }}</div>
+            </a>
+          </sc-for>
+          <sc-if value="{{ eventsEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:13px;color:var(--color-neutral-600);padding:var(--space-3) 0">Пока нет зафиксированных действий.</div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const ORDERS_KEY = 'prozapas_orders_v4';
+const USERS_KEY = 'prozapas_users_v1';
+const AUTH_KEY = 'prozapas_auth_v1';
+function loadOrders() { try { const r = localStorage.getItem(ORDERS_KEY); if (r) return JSON.parse(r); } catch (e) {} return []; }
+function loadUsers() { try { const r = localStorage.getItem(USERS_KEY); if (r) return JSON.parse(r); } catch (e) {} return []; }
+function loadAuth() { try { const r = localStorage.getItem(AUTH_KEY); if (r) return JSON.parse(r); } catch (e) {} return null; }
+const ROLE_LABEL = { manager: 'Менеджер', stockman: 'Кладовщик', admin: 'Администратор' };
+function parseRuDateTime(str) {
+  if (!str || str === '—') return null;
+  const [datePart, timePart] = str.split(' ');
+  const [d, m, y] = datePart.split('.').map(Number);
+  const [hh, mm] = (timePart || '0:0').split(':').map(Number);
+  return new Date(y, m - 1, d, hh || 0, mm || 0);
+}
+function fmtShort(str) {
+  if (!str || str === '—') return '';
+  const [d, t] = str.split(' ');
+  const [dd, mm] = d.split('.');
+  return dd + '.' + mm + (t ? ' ' + t : '');
+}
+const EVENT_META = {
+  created: { text: n => 'Создан заказ №' + n, tag: 'Заказ', cls: 'tag-outline', href: 'ProЗапас Заказы.dc.html' },
+  processing: { text: n => 'Заказ №' + n + ' взят в обработку', tag: 'Заказ', cls: 'tag-outline', href: 'ProЗапас Заказы.dc.html' },
+  shipped: { text: n => 'Заказ №' + n + ' отгружен', tag: 'Отгрузка', cls: 'tag-accent', href: 'ProЗапас Отгрузка.dc.html' },
+  received: { text: n => 'Заказ №' + n + ' принят', tag: 'Приёмка', cls: 'tag-neutral', href: 'ProЗапас Приемка.dc.html' },
+  declined: { text: n => 'Заказ №' + n + ' отклонён', tag: 'Заказ', cls: 'tag-outline', href: 'ProЗапас Заказы.dc.html' },
+  cancelled: { text: n => 'Заказ №' + n + ' отменён', tag: 'Заказ', cls: 'tag-outline', href: 'ProЗапас Заказы.dc.html' }
+};
+
+class Component extends DCLogic {
+  renderVals() {
+    const today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    const orders = loadOrders();
+    const users = loadUsers();
+    const auth = loadAuth();
+    const me = (auth && users.find(u => u.id === auth.id)) || users.find(u => u.role === 'admin') || users[0] || null;
+    const role = me ? me.role : 'admin';
+    const firstName = me ? (me.fullName.split(' ')[1] || me.fullName.split(' ')[0]) : 'коллега';
+    const roleLabel = ROLE_LABEL[role] || 'Сотрудник';
+
+    const ours = orders.filter(o => o.direction === 'ours');
+    const theirs = orders.filter(o => o.direction === 'theirs');
+    const inWork = orders.filter(o => o.status === 'created' || o.status === 'processing').length;
+    const oursInWork = ours.filter(o => o.status === 'created' || o.status === 'processing').length;
+    const theirsInWork = theirs.filter(o => o.status === 'created' || o.status === 'processing').length;
+    const toShip = theirs.filter(o => o.status === 'created' || o.status === 'processing').length;
+    const shipWaiting = theirs.filter(o => o.status === 'created').length;
+    const toReceive = ours.filter(o => o.status === 'processing').length;
+    const activeUsers = users.filter(u => u.status === 'active').length;
+    const blockedUsers = users.filter(u => u.status === 'blocked').length;
+
+    const stats = [
+      { label: 'Заказы в работе', value: String(inWork), hint: oursInWork + ' исходящих · ' + theirsInWork + ' входящих', href: 'ProЗапас Заказы.dc.html' },
+      { label: 'К отгрузке', value: String(toShip), hint: shipWaiting + ' ожидают сборки', href: 'ProЗапас Отгрузка.dc.html' },
+      { label: 'К приёмке', value: String(toReceive), hint: 'наши заказы в пути', href: 'ProЗапас Приемка.dc.html' }
+    ];
+
+    const evAll = [];
+    orders.forEach(o => (o.history || []).forEach(h => {
+      const meta = EVENT_META[h.status];
+      if (!meta) return;
+      evAll.push({ dt: parseRuDateTime(h.dateTime), raw: h.dateTime, order: o.number, meta });
+    }));
+    evAll.sort((a, b) => (b.dt ? b.dt.getTime() : 0) - (a.dt ? a.dt.getTime() : 0));
+    const events = evAll.slice(0, 6).map(e => ({
+      tag: e.meta.tag, tagClass: e.meta.cls, text: e.meta.text(e.order), time: fmtShort(e.raw), href: e.meta.href
+    }));
+
+    const orderSub = o => (o.positions ? o.positions.length : 0) + ' поз. · ' + (o.counterpartyWarehouse || '—');
+    const byId = 'ProЗапас Заказ.dc.html?id=';
+    const T = {
+      process: o => ({ tag: 'Заказ', tagClass: 'tag-outline', text: 'Обработать заказ ' + o.number, sub: orderSub(o), href: byId + o.id, key: o.id }),
+      ship: o => ({ tag: 'Отгрузка', tagClass: 'tag-accent', text: 'Собрать и отгрузить ' + o.number, sub: orderSub(o), href: 'ProЗапас Отгрузка.dc.html', key: o.id }),
+      receive: o => ({ tag: 'Приёмка', tagClass: 'tag-neutral', text: 'Принять поставку ' + o.number, sub: orderSub(o), href: 'ProЗапас Приемка.dc.html', key: o.id })
+    };
+    const toProcess = orders.filter(o => o.status === 'created');
+    const shipQueue = orders.filter(o => o.direction === 'theirs' && (o.status === 'created' || o.status === 'processing'));
+    const receiveQueue = orders.filter(o => o.direction === 'ours' && (o.status === 'processing' || o.status === 'shipped'));
+
+    let tasks = [];
+    if (role === 'manager') {
+      tasks = [...toProcess.map(T.process)];
+    } else if (role === 'stockman') {
+      tasks = [...shipQueue.map(T.ship), ...receiveQueue.map(T.receive)];
+    } else {
+      const seen = new Set();
+      [...toProcess.map(T.process), ...shipQueue.map(T.ship), ...receiveQueue.map(T.receive)].forEach(t => {
+        const k = t.tag + t.key; if (!seen.has(k)) { seen.add(k); tasks.push(t); }
+      });
+    }
+    tasks = tasks.slice(0, 8);
+
+    return { today, firstName, roleLabel, stats, events, eventsEmpty: events.length === 0, tasks, tasksEmpty: tasks.length === 0, tasksCount: String(tasks.length) };
+  }
+}
+</script>
+</body>
+</html>

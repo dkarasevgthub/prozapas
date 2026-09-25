@@ -1,0 +1,6 @@
+PyQt6==6.11.0
+PyQt6-Qt6==6.11.1
+PyQt6_sip==13.11.1
+pyserial==3.5
+pywin32==312 
+tomli_w==1.2.0   

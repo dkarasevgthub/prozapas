@@ -1,0 +1,73 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: prozapas_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-prozapas_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
+      POSTGRES_DB: ${POSTGRES_DB:-prozapas_db}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-prozapas_user} -d ${POSTGRES_DB:-prozapas_db}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # Ходилка по ревизиям: docker compose run --rm migrate <любая команда alembic>
+  migrate:
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-prozapas_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-prozapas_db}
+    volumes:
+      - ./database/models.py:/app/models.py:ro
+      - ./database/alembic/versions:/app/alembic/versions
+
+  # Данные для тестовых прогонов: docker compose run --rm seed
+  seed:
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["python", "seed.py"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-prozapas_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-prozapas_db}
+      ADMIN_LOGIN: ${ADMIN_LOGIN:-admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@prozapas.ru}
+      SEED_PASSWORD: ${SEED_PASSWORD:?задайте SEED_PASSWORD в .env}
+    volumes:
+      - ./database/models.py:/app/models.py:ro
+      - ./database/seed.py:/app/seed.py:ro
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-prozapas_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-prozapas_db}
+      JWT_SECRET: ${JWT_SECRET:?задайте JWT_SECRET в .env, не короче 32 знаков}
+      APP_VERSION: ${APP_VERSION:-1.0.0}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      # Правки видны без пересборки; в проде монтирование убрать.
+      - ./api:/app/api:ro
+      - ./database/models.py:/app/database/models.py:ro
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Кэши инструментов. Сами тесты в git едут: без них нечего запускать в CI.
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Среды разработки
+.idea/
+.vscode/
+.claude/
+
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Docker data
+pgdata/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Секреты окружения и настройки рабочих мест
+.env
+backend/.env
+desktop/.env

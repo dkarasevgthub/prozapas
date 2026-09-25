@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/styles.css">
+  <script src="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/_ds_bundle.js"></script>
+  <style>
+    html,body{margin:0;height:100%}
+    body{background:var(--color-bg);color:var(--color-text);font-family:var(--font-body)}
+    a{color:var(--color-accent-700)}
+    a:hover{color:var(--color-accent)}
+    .authwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:var(--space-6)}
+  </style>
+</helmet>
+<div class="authwrap">
+  <div style="width:100%;max-width:400px">
+    <div style="text-align:center;margin-bottom:var(--space-6)">
+      <div style="font-family:var(--font-heading);font-weight:600;font-size:34px;letter-spacing:-0.01em">Pro<span style="color:var(--color-accent-700)">Запас</span></div>
+      <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600);margin-top:2px">учёт и логистика</div>
+    </div>
+    <div class="blueprint" style="padding:var(--space-6)">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <h4 style="font-family:var(--font-heading);font-size:22px;margin:0 0 var(--space-5);text-align:center">Вход в систему</h4>
+      <div class="field" style="margin-bottom:var(--space-4)">
+        <label>Логин</label>
+        <input class="input" type="text" placeholder="i.ivanov" value="{{ loginValue }}" onChange="{{ onLoginChange }}" onKeyDown="{{ onKeyDown }}">
+      </div>
+      <div class="field" style="margin-bottom:var(--space-4)">
+        <label>Пароль</label>
+        <input class="input" type="password" placeholder="••••••••" value="{{ passwordValue }}" onChange="{{ onPasswordChange }}" onKeyDown="{{ onKeyDown }}">
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--color-neutral-700);cursor:pointer;margin-bottom:var(--space-5)">
+        <input type="checkbox" style="width:15px;height:15px;accent-color:var(--color-accent)" checked="{{ rememberValue }}" onChange="{{ onRememberChange }}">
+        Запомнить меня
+      </label>
+      <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:13px;color:#b3261e;margin-bottom:var(--space-3)">{{ errorText }}</div>
+      </sc-if>
+      <button class="btn btn-primary btn-block" onClick="{{ onSubmit }}">Войти</button>
+      <div style="font-size:12px;color:var(--color-neutral-600);text-align:center;margin-top:var(--space-4)">Забыли пароль? Обратитесь к администратору системы.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const USERS_KEY = 'prozapas_users_v1';
+const AUTH_KEY = 'prozapas_auth_v1';
+function loadUsers() { try { const r = localStorage.getItem(USERS_KEY); if (r) return JSON.parse(r); } catch (e) {} return []; }
+
+class Component extends DCLogic {
+  state = { login: 'i.kuznetsov', password: '', remember: true, error: '' };
+
+  submit() {
+    const login = this.state.login.trim().toLowerCase();
+    if (!login || !this.state.password) { this.setState({ error: 'Введите логин и пароль.' }); return; }
+    const user = loadUsers().find(u => u.email.split('@')[0].toLowerCase() === login);
+    if (!user) { this.setState({ error: 'Пользователь с таким логином не найден.' }); return; }
+    if (user.status === 'blocked') { this.setState({ error: 'Учётная запись заблокирована. Обратитесь к администратору.' }); return; }
+    localStorage.setItem(AUTH_KEY, JSON.stringify({ id: user.id, at: Date.now() }));
+    window.location.href = 'ProЗапас Главная.dc.html';
+  }
+
+  renderVals() {
+    return {
+      loginValue: this.state.login,
+      onLoginChange: (e) => this.setState({ login: e.target.value, error: '' }),
+      passwordValue: this.state.password,
+      onPasswordChange: (e) => this.setState({ password: e.target.value, error: '' }),
+      rememberValue: this.state.remember,
+      onRememberChange: (e) => this.setState({ remember: e.target.checked }),
+      hasError: !!this.state.error, errorText: this.state.error,
+      onKeyDown: (e) => { if (e.key === 'Enter') this.submit(); },
+      onSubmit: () => this.submit()
+    };
+  }
+}
+</script>
+</body>
+</html>

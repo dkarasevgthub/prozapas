@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/styles.css">
+  <script src="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/_ds_bundle.js"></script>
+  <style>
+    html{overflow-y:scroll}
+    body{margin:0;background:var(--color-bg);color:var(--color-text)}
+    a{color:var(--color-accent-700)}
+    a:hover{color:var(--color-accent)}
+    .table{font-size:16px}
+    .table th{font-size:13px;white-space:normal;line-height:1.3;padding:var(--space-1) var(--space-2);vertical-align:bottom;overflow-wrap:break-word;text-transform:none;letter-spacing:normal;font-weight:600}
+    .table td{padding:var(--space-2);line-height:1.25;overflow-wrap:break-word}
+    .breadcrumb{font-size:18px;color:var(--color-neutral-600);margin-bottom:var(--space-2)}
+    main h1{font-size:44px}
+    .clickable{cursor:pointer;transition:border-color .12s ease,background .12s ease}
+    tr.clickable:hover td{background:color-mix(in srgb, var(--color-text) 4%, transparent)}
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--space-3);padding:var(--space-8) var(--space-4);color:var(--color-neutral-600)}
+    .empty-state svg{color:var(--color-neutral-400)}
+    .posrow{display:grid;grid-template-columns:2fr 90px 28px;gap:var(--space-3);align-items:end;margin-bottom:var(--space-3)}
+    .no-scrollbar{scrollbar-width:none}
+    .no-scrollbar::-webkit-scrollbar{display:none}
+  </style>
+</helmet>
+<div style="display:flex;min-height:100vh;width:100%;font-family:var(--font-body);overflow-x:hidden">
+  <dc-import name="Sidebar" active="orders" hint-size="200px,100%"></dc-import>
+  <main style="flex:1;min-width:0;padding:var(--space-8) var(--space-8) var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)">
+    <div class="breadcrumb">ProЗапас / Заказы</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)">
+      <div>
+        <h1 style="margin-bottom:4px">Заказы</h1>
+        <div style="font-size:14px;color:var(--color-neutral-600)">Заказы на перемещение товара между складами</div>
+      </div>
+      <sc-if value="{{ isOurs }}" hint-placeholder-val="{{ false }}">
+        <a href="ProЗапас Новый заказ.dc.html" class="btn btn-primary">+ Создать заказ</a>
+      </sc-if>
+    </div>
+
+    <div style="display:flex;gap:var(--space-2)">
+      <button class="{{ tabIncomingCls }}" onClick="{{ onSetTabIncoming }}">Входящие</button>
+      <button class="{{ tabOutgoingCls }}" onClick="{{ onSetTabOutgoing }}">Исходящие</button>
+    </div>
+
+    <div style="display:flex;align-items:end;gap:var(--space-4);flex-wrap:wrap">
+      <div class="field" style="min-width:200px;margin:0">
+        <label>Поиск по номеру</label>
+        <input class="input" type="text" value="{{ searchValue }}" onChange="{{ onSearchChange }}">
+      </div>
+      <div class="field" style="min-width:170px;margin:0">
+        <label>Статус</label>
+        <select class="input" value="{{ statusFilterValue }}" onChange="{{ onStatusFilterChange }}">
+          <option value="all">Все статусы</option>
+          <option value="created">Создан</option>
+          <option value="processing">В обработке</option>
+          <option value="shipped">Отгружен</option>
+          <option value="received">Завершен</option>
+          <option value="declined">Отклонён</option>
+          <option value="cancelled">Отменён</option>
+        </select>
+      </div>
+      <div class="field" style="min-width:170px;margin:0">
+          <label>Склад</label>
+          <select class="input" value="{{ warehouseFilterValue }}" onChange="{{ onWarehouseFilterChange }}">
+            <option value="all">Все склады</option>
+            <sc-for list="{{ warehouseFilterOptions }}" as="w" hint-placeholder-count="4">
+              <option value="{{ w }}">{{ w }}</option>
+            </sc-for>
+          </select>
+        </div>
+        <div class="field" style="min-width:170px;margin:0">
+          <label>Ответственный</label>
+          <select class="input" value="{{ responsibleFilterValue }}" onChange="{{ onResponsibleFilterChange }}">
+            <option value="all">Все</option>
+            <sc-for list="{{ responsibleFilterOptions }}" as="r" hint-placeholder-count="2">
+              <option value="{{ r }}">{{ r }}</option>
+            </sc-for>
+          </select>
+        </div>
+        <div class="field" style="min-width:150px;margin:0">
+          <label>Дата создания от</label>
+          <input class="input" type="date" value="{{ dateFromValue }}" onChange="{{ onDateFromChange }}">
+        </div>
+        <div class="field" style="min-width:150px;margin:0">
+          <label>Дата создания до</label>
+          <input class="input" type="date" value="{{ dateToValue }}" onChange="{{ onDateToChange }}">
+        </div>
+      <button class="btn btn-ghost" onClick="{{ onResetFilters }}">Сбросить</button>
+    </div>
+
+    <div class="blueprint no-scrollbar" id="orders-scroll-wrap" style="padding:var(--space-4);overflow-x:auto">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <sc-if value="{{ isTheirs }}" hint-placeholder-val="{{ true }}">
+      <table class="table" style="table-layout:fixed;width:100%;min-width:770px;font-size:14px">
+        <thead><tr>
+          <th style="width:58px">Номер</th><th style="width:96px">Статус</th><th style="width:150px">{{ warehouseColLabel }}</th><th style="width:64px">Позиций</th><th style="width:118px">Ответственный</th><th style="width:135px">Создан</th><th style="width:135px">Отгружен</th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ orders }}" as="o" hint-placeholder-count="5">
+            <tr class="clickable" onClick="{{ o.onClick }}">
+              <td style="font-family:var(--font-heading);white-space:nowrap">№{{ o.number }}</td>
+              <td style="white-space:nowrap"><span class="tag" style="border:none;font-weight:700;color:{{ o.statusColor }};background:{{ o.statusBg }}">{{ o.statusLabel }}</span></td>
+              <td style="color:var(--color-neutral-600)">{{ o.warehouseFrom }}</td>
+              <td style="color:var(--color-neutral-600);white-space:nowrap">{{ o.positionsCount }}</td>
+              <td style="color:var(--color-neutral-600)">{{ o.responsible }}</td>
+              <td style="color:var(--color-neutral-600);white-space:nowrap">{{ o.createdDateTime }}</td>
+              <td style="color:var(--color-neutral-600);white-space:nowrap">{{ o.shipDateTime }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      </sc-if>
+      <sc-if value="{{ isOurs }}" hint-placeholder-val="{{ false }}">
+      <table class="table" style="table-layout:fixed;width:100%;font-size:14px">
+        <thead><tr>
+          <th style="width:60px">Номер</th><th style="width:100px">Статус</th><th style="width:150px">{{ warehouseColLabel }}</th><th style="width:72px">Позиций</th><th style="width:120px">Ответственный</th><th style="width:135px">Создан</th><th style="width:135px">Принят</th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ orders }}" as="o" hint-placeholder-count="5">
+            <tr class="clickable" onClick="{{ o.onClick }}">
+              <td style="font-family:var(--font-heading);white-space:nowrap">№{{ o.number }}</td>
+              <td style="white-space:nowrap"><span class="tag" style="border:none;font-weight:700;color:{{ o.statusColor }};background:{{ o.statusBg }}">{{ o.statusLabel }}</span></td>
+              <td style="color:var(--color-neutral-600)">{{ o.warehouseFrom }}</td>
+              <td style="color:var(--color-neutral-600);white-space:nowrap">{{ o.positionsCount }}</td>
+              <td style="color:var(--color-neutral-600)">{{ o.responsible }}</td>
+              <td style="color:var(--color-neutral-600);white-space:nowrap">{{ o.createdDateTime }}</td>
+              <td style="color:var(--color-neutral-600);white-space:nowrap">{{ o.acceptedAt }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      </sc-if>
+      <sc-if value="{{ ordersEmpty }}" hint-placeholder-val="{{ false }}">
+        <div class="empty-state">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+          <div style="font-size:13px">Ничего не найдено по этим условиям</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ listShowPagination }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);margin-top:var(--space-4)">
+          <div style="font-size:13px;color:var(--color-neutral-600)">{{ listRangeText }}</div>
+          <div style="display:flex;align-items:center;gap:var(--space-2)">
+            <button class="btn btn-secondary btn-icon" disabled="{{ listPagePrevDisabled }}" onClick="{{ onListPagePrev }}">‹</button>
+            <sc-for list="{{ listPageNumbers }}" as="pn" hint-placeholder-count="3">
+              <button class="{{ pn.cls }}" onClick="{{ pn.onClick }}">{{ pn.n }}</button>
+            </sc-for>
+            <button class="btn btn-secondary btn-icon" disabled="{{ listPageNextDisabled }}" onClick="{{ onListPageNext }}">›</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const STORAGE_KEY = 'prozapas_orders_v4';
+const CURRENT_USER = 'Кузнецов И.А.';
+const WAREHOUSES = ['Склад №1', 'Склад №3', 'Склад №4', 'Центральный склад'];
+const CATALOG_ITEMS = [
+  { article: '100421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.', unitWeight: 0.02 },
+  { article: '100433', name: 'Гайка М8 ГОСТ 5915', unit: 'шт.', unitWeight: 0.01 },
+  { article: '201187', name: 'Подшипник 6205-2RS', unit: 'шт.', unitWeight: 0.08 },
+  { article: '201204', name: 'Ремень приводной А-1250', unit: 'шт.', unitWeight: 0.45 },
+  { article: '100458', name: 'Лист стальной 2×1250×2500', unit: 'лист', unitWeight: 72.5 },
+  { article: '100477', name: 'Уголок стальной 50×50×5', unit: 'шт.', unitWeight: 4.5 },
+  { article: '100512', name: 'Труба стальная 32×2', unit: 'м', unitWeight: 1.6 },
+  { article: '300098', name: 'Электродвигатель АИР90', unit: 'шт.', unitWeight: 24.0 }
+];
+const STATUS_META = {
+  created: { label: 'Создан', color: 'var(--color-neutral-800)', bg: 'var(--color-neutral-200)' },
+  processing: { label: 'В обработке', color: 'var(--color-accent-2-700)', bg: 'var(--color-accent-2-100)' },
+  shipped: { label: 'Отгружен', color: 'var(--color-accent-800)', bg: 'var(--color-accent-100)' },
+  received: { label: 'Завершен', color: 'var(--color-accent-700)', bg: 'transparent' },
+  declined: { label: 'Отклонён', color: 'var(--color-neutral-600)', bg: 'transparent' },
+  cancelled: { label: 'Отменён', color: 'var(--color-neutral-600)', bg: 'transparent' }
+};
+
+function catalogItem(article) { return CATALOG_ITEMS.find(c => c.article === article); }
+function formatNow() {
+  const d = new Date();
+  return d.toLocaleDateString('ru-RU') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function parseRuDateTime(str) {
+  if (!str || str === '—') return null;
+  const [datePart] = str.split(' ');
+  const [d, m, y] = datePart.split('.').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+const COUNTERPARTY_RESPONSIBLE = {
+  'Склад №1': 'Соколов П.Н.', 'Склад №3': 'Морозова Е.В.', 'Склад №4': 'Титов Р.А.', 'Центральный склад': 'Волкова М.С.'
+};
+function seedOrders() {
+  const mk = (id, number, direction, status, counterpartyWarehouse, daysAgo, positions) => {
+    const created = new Date(2026, 6, 22 - daysAgo, 9, 0);
+    const createdStr = created.toLocaleDateString('ru-RU') + ' 09:00';
+    const history = [{ status: 'created', dateTime: createdStr }];
+    let shipDateTime = '—', acceptedAt = null;
+    if (status !== 'created') { history.push({ status: 'processing', dateTime: createdStr }); }
+    if (status === 'shipped' || status === 'received') {
+      const ship = new Date(created); ship.setDate(ship.getDate() + 1);
+      shipDateTime = ship.toLocaleDateString('ru-RU') + ' 12:00';
+      history.push({ status: 'shipped', dateTime: shipDateTime });
+    }
+    if (status === 'received') {
+      const acc = new Date(created); acc.setDate(acc.getDate() + 2);
+      acceptedAt = acc.toLocaleDateString('ru-RU') + ' 10:30';
+      history.push({ status: 'received', dateTime: acceptedAt });
+    }
+    return { id, number, direction, status, counterpartyWarehouse, counterpartyResponsible: COUNTERPARTY_RESPONSIBLE[counterpartyWarehouse] || '—', createdDateTime: createdStr, shipDateTime, acceptedAt, responsible: CURRENT_USER, positions, history };
+  };
+  return [
+    mk(1, '2001', 'ours', 'created', 'Склад №1', 1, [{ article: '100421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.', qty: 500 }]),
+    mk(2, '2002', 'ours', 'processing', 'Склад №3', 3, [{ article: '201187', name: 'Подшипник 6205-2RS', unit: 'шт.', qty: 20 }, { article: '201204', name: 'Ремень приводной А-1250', unit: 'шт.', qty: 15 }]),
+    mk(3, '2003', 'ours', 'processing', 'Центральный склад', 5, [{ article: '100458', name: 'Лист стальной 2×1250×2500', unit: 'лист', qty: 4 }]),
+    mk(4, '2004', 'ours', 'received', 'Склад №4', 8, [{ article: '100477', name: 'Уголок стальной 50×50×5', unit: 'шт.', qty: 30 }]),
+    mk(5, '2005', 'ours', 'created', 'Центральный склад', 0, [{ article: '201412', name: 'Подшипник 6208-2RS', unit: 'шт.', qty: 25 }]),
+    mk(11, '2006', 'ours', 'processing', 'Склад №1', 2, [{ article: '100433', name: 'Гайка М8 ГОСТ 5915', unit: 'шт.', qty: 300 }]),
+    mk(12, '2007', 'ours', 'received', 'Склад №3', 10, [{ article: '100512', name: 'Труба стальная 32×2', unit: 'м', qty: 60 }]),
+    mk(13, '2008', 'ours', 'created', 'Склад №4', 0, [{ article: '300098', name: 'Электродвигатель АИР90', unit: 'шт.', qty: 2 }]),
+    mk(14, '2009', 'ours', 'declined', 'Центральный склад', 6, [{ article: '100421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.', qty: 200 }]),
+    mk(15, '2010', 'ours', 'cancelled', 'Склад №1', 4, [{ article: '201204', name: 'Ремень приводной А-1250', unit: 'шт.', qty: 12 }]),
+    mk(16, '2011', 'ours', 'processing', 'Склад №3', 1, [{ article: '100477', name: 'Уголок стальной 50×50×5', unit: 'шт.', qty: 25 }]),
+    mk(17, '2012', 'ours', 'received', 'Склад №4', 12, [{ article: '201187', name: 'Подшипник 6205-2RS', unit: 'шт.', qty: 8 }]),
+    mk(18, '2013', 'ours', 'created', 'Склад №1', 0, [{ article: '100458', name: 'Лист стальной 2×1250×2500', unit: 'лист', qty: 3 }]),
+    mk(19, '2014', 'ours', 'processing', 'Центральный склад', 3, [{ article: '100433', name: 'Гайка М8 ГОСТ 5915', unit: 'шт.', qty: 150 }]),
+    mk(20, '2015', 'ours', 'received', 'Склад №3', 9, [{ article: '300098', name: 'Электродвигатель АИР90', unit: 'шт.', qty: 1 }]),
+    mk(6, '3001', 'theirs', 'created', 'Склад №3', 0, [{ article: '100433', name: 'Гайка М8 ГОСТ 5915', unit: 'шт.', qty: 200 }]),
+    mk(7, '3002', 'theirs', 'processing', 'Склад №1', 2, [{ article: '100512', name: 'Труба стальная 32×2', unit: 'м', qty: 40 }]),
+    mk(8, '3003', 'theirs', 'shipped', 'Центральный склад', 4, [{ article: '300098', name: 'Электродвигатель АИР90', unit: 'шт.', qty: 2 }]),
+    mk(9, '3004', 'theirs', 'received', 'Склад №4', 6, [{ article: '100655', name: 'Шайба М8 ГОСТ 6402', unit: 'шт.', qty: 800 }]),
+    mk(10, '3005', 'theirs', 'created', 'Склад №1', 0, [{ article: '201204', name: 'Ремень приводной А-1250', unit: 'шт.', qty: 10 }]),
+    mk(21, '3006', 'theirs', 'processing', 'Склад №3', 1, [{ article: '100421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.', qty: 400 }]),
+    mk(22, '3007', 'theirs', 'shipped', 'Склад №4', 3, [{ article: '201187', name: 'Подшипник 6205-2RS', unit: 'шт.', qty: 15 }]),
+    mk(23, '3008', 'theirs', 'received', 'Центральный склад', 8, [{ article: '100477', name: 'Уголок стальной 50×50×5', unit: 'шт.', qty: 20 }]),
+    mk(24, '3009', 'theirs', 'created', 'Склад №1', 0, [{ article: '100458', name: 'Лист стальной 2×1250×2500', unit: 'лист', qty: 5 }]),
+    mk(25, '3010', 'theirs', 'declined', 'Склад №3', 5, [{ article: '201412', name: 'Подшипник 6208-2RS', unit: 'шт.', qty: 30 }]),
+    mk(26, '3011', 'theirs', 'processing', 'Склад №4', 2, [{ article: '100512', name: 'Труба стальная 32×2', unit: 'м', qty: 90 }]),
+    mk(27, '3012', 'theirs', 'shipped', 'Центральный склад', 4, [{ article: '100433', name: 'Гайка М8 ГОСТ 5915', unit: 'шт.', qty: 500 }]),
+    mk(28, '3013', 'theirs', 'received', 'Склад №1', 11, [{ article: '300098', name: 'Электродвигатель АИР90', unit: 'шт.', qty: 3 }]),
+    mk(29, '3014', 'theirs', 'created', 'Склад №3', 0, [{ article: '201204', name: 'Ремень приводной А-1250', unit: 'шт.', qty: 18 }]),
+    mk(30, '3015', 'theirs', 'processing', 'Склад №4', 1, [{ article: '100421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.', qty: 250 }]),
+    mk(31, '2016', 'ours', 'created', 'Склад №1', 0, [{ article: '201412', name: 'Подшипник 6208-2RS', unit: 'шт.', qty: 14 }]),
+    mk(32, '2017', 'ours', 'processing', 'Склад №3', 2, [{ article: '100933', name: 'Гайка М10 ГОСТ 5915', unit: 'шт.', qty: 400 }]),
+    mk(33, '2018', 'ours', 'received', 'Склад №4', 13, [{ article: '100812', name: 'Швеллер 10П ГОСТ 8240', unit: 'м', qty: 20 }]),
+    mk(34, '2019', 'ours', 'declined', 'Центральный склад', 7, [{ article: '201055', name: 'Муфта соединительная МУВП-40', unit: 'шт.', qty: 6 }]),
+    mk(35, '2020', 'ours', 'created', 'Склад №1', 0, [{ article: '300159', name: 'Редуктор червячный РЧУ-125', unit: 'шт.', qty: 2 }]),
+    mk(36, '2021', 'ours', 'processing', 'Склад №3', 3, [{ article: '100655', name: 'Шайба М8 ГОСТ 6402', unit: 'шт.', qty: 1000 }]),
+    mk(37, '2022', 'ours', 'received', 'Склад №4', 14, [{ article: '100701', name: 'Винт М6×20 ГОСТ 17475', unit: 'шт.', qty: 700 }]),
+    mk(38, '2023', 'ours', 'cancelled', 'Центральный склад', 5, [{ article: '201340', name: 'Ремень клиновой Б-1400', unit: 'шт.', qty: 30 }]),
+    mk(39, '2024', 'ours', 'created', 'Склад №1', 0, [{ article: '300133', name: 'Насос шестерённый НШ-10', unit: 'шт.', qty: 3 }]),
+    mk(40, '2025', 'ours', 'processing', 'Склад №3', 2, [{ article: '100421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.', qty: 600 }]),
+    mk(41, '3016', 'theirs', 'created', 'Склад №1', 0, [{ article: '100933', name: 'Гайка М10 ГОСТ 5915', unit: 'шт.', qty: 250 }]),
+    mk(42, '3017', 'theirs', 'processing', 'Склад №3', 2, [{ article: '201412', name: 'Подшипник 6208-2RS', unit: 'шт.', qty: 9 }]),
+    mk(43, '3018', 'theirs', 'shipped', 'Склад №4', 4, [{ article: '100812', name: 'Швеллер 10П ГОСТ 8240', unit: 'м', qty: 35 }]),
+    mk(44, '3019', 'theirs', 'received', 'Центральный склад', 9, [{ article: '201055', name: 'Муфта соединительная МУВП-40', unit: 'шт.', qty: 5 }]),
+    mk(45, '3020', 'theirs', 'created', 'Склад №1', 0, [{ article: '300159', name: 'Редуктор червячный РЧУ-125', unit: 'шт.', qty: 1 }]),
+    mk(46, '3021', 'theirs', 'declined', 'Склад №3', 6, [{ article: '100655', name: 'Шайба М8 ГОСТ 6402', unit: 'шт.', qty: 900 }]),
+    mk(47, '3022', 'theirs', 'processing', 'Склад №4', 2, [{ article: '100701', name: 'Винт М6×20 ГОСТ 17475', unit: 'шт.', qty: 550 }]),
+    mk(48, '3023', 'theirs', 'shipped', 'Центральный склад', 5, [{ article: '201340', name: 'Ремень клиновой Б-1400', unit: 'шт.', qty: 22 }]),
+    mk(49, '3024', 'theirs', 'received', 'Склад №1', 10, [{ article: '300133', name: 'Насос шестерённый НШ-10', unit: 'шт.', qty: 2 }]),
+    mk(50, '3025', 'theirs', 'created', 'Склад №3', 0, [{ article: '100421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.', qty: 320 }]),
+    mk(60, '3026', 'theirs', 'processing', 'Склад №1', 1, [
+      { article: '100421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.', qty: 800 },
+      { article: '100458', name: 'Лист стальной 2×1250×2500', unit: 'лист', qty: 5 },
+      { article: '100477', name: 'Уголок стальной 50×50×5', unit: 'шт.', qty: 12 },
+      { article: '201187', name: 'Подшипник 6205-2RS', unit: 'шт.', qty: 30 }
+    ]),
+    mk(61, '3027', 'theirs', 'created', 'Склад №3', 1, [
+      { article: '100433', name: 'Гайка М8 ГОСТ 5915', unit: 'шт.', qty: 1500 },
+      { article: '100512', name: 'Труба стальная 32×2', unit: 'м', qty: 40 },
+      { article: '300098', name: 'Электродвигатель АИР90', unit: 'шт.', qty: 3 }
+    ]),
+    mk(62, '3028', 'theirs', 'processing', 'Склад №4', 2, [
+      { article: '100458', name: 'Лист стальной 2×1250×2500', unit: 'лист', qty: 8 },
+      { article: '100477', name: 'Уголок стальной 50×50×5', unit: 'шт.', qty: 20 }
+    ]),
+    mk(63, '3029', 'theirs', 'created', 'Центральный склад', 0, [
+      { article: '201204', name: 'Ремень приводной А-1250', unit: 'шт.', qty: 18 },
+      { article: '201187', name: 'Подшипник 6205-2RS', unit: 'шт.', qty: 24 },
+      { article: '100421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.', qty: 600 },
+      { article: '100433', name: 'Гайка М8 ГОСТ 5915', unit: 'шт.', qty: 600 }
+    ]),
+    mk(64, '3030', 'theirs', 'processing', 'Склад №1', 0, [
+      { article: '300098', name: 'Электродвигатель АИР90', unit: 'шт.', qty: 4 },
+      { article: '100512', name: 'Труба стальная 32×2', unit: 'м', qty: 75 }
+    ])
+  ];
+}
+
+function loadOrders() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  const seed = seedOrders();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+  return seed;
+}
+function saveOrders(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+class Component extends DCLogic {
+  state = {
+    search: '', statusFilter: 'all', listPage: 1, pageSize: 20,
+    tab: 'theirs', warehouseFilter: 'all', responsibleFilter: 'all', dateFrom: '', dateTo: ''
+  };
+
+  setTab(tab) { this.setState({ tab, search: '', statusFilter: 'all', warehouseFilter: 'all', responsibleFilter: 'all', dateFrom: '', dateTo: '', listPage: 1 }); }
+
+  ROW_HEIGHT = 41;
+  RESERVED_HEIGHT = 400;
+  computePageSize() { return Math.max(5, Math.floor((window.innerHeight - this.RESERVED_HEIGHT) / this.ROW_HEIGHT)); }
+  componentDidMount() {
+    this.setState({ pageSize: this.computePageSize() });
+    this._onResize = () => this.setState({ pageSize: this.computePageSize() });
+    window.addEventListener('resize', this._onResize);
+    const wrap = document.getElementById('orders-scroll-wrap');
+    if (wrap) {
+      this._onWheel = (e) => {
+        if (e.deltaX === 0 && e.deltaY !== 0) {
+          e.preventDefault();
+          window.scrollBy(0, e.deltaY);
+        }
+      };
+      wrap.addEventListener('wheel', this._onWheel, { passive: false });
+    }
+  }
+  componentWillUnmount() {
+    if (this._onResize) window.removeEventListener('resize', this._onResize);
+    const wrap = document.getElementById('orders-scroll-wrap');
+    if (wrap && this._onWheel) wrap.removeEventListener('wheel', this._onWheel);
+  }
+
+  setFilter(patch) { this.setState({ ...patch, listPage: 1 }); }
+  resetFilters() { this.setState({ search: '', statusFilter: 'all', warehouseFilter: 'all', responsibleFilter: 'all', dateFrom: '', dateTo: '', listPage: 1 }); }
+  goToListPage(n) { this.setState({ listPage: n }); }
+
+  renderVals() {
+    const { search, statusFilter, tab, warehouseFilter, responsibleFilter, dateFrom, dateTo } = this.state;
+    const searchLc = search.trim().toLowerCase();
+    const tabOrders = loadOrders().filter(o => o.direction === tab);
+
+    const warehouseFilterOptions = [...new Set(tabOrders.map(o => o.counterpartyWarehouse))];
+    const responsibleFilterOptions = [...new Set((warehouseFilter !== 'all' ? tabOrders.filter(o => o.counterpartyWarehouse === warehouseFilter) : tabOrders).map(o => o.responsible))];
+
+    const allOrders = tabOrders.filter(o => {
+      if (searchLc && !o.number.toLowerCase().includes(searchLc)) return false;
+      if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+      if (warehouseFilter !== 'all' && o.counterpartyWarehouse !== warehouseFilter) return false;
+      if (responsibleFilter !== 'all' && o.responsible !== responsibleFilter) return false;
+      const created = parseRuDateTime(o.createdDateTime);
+      if (dateFrom && created < new Date(dateFrom)) return false;
+      if (dateTo && created > new Date(dateTo)) return false;
+      return true;
+    }).sort((a, b) => b.id - a.id).map(o => ({
+      number: o.number,
+      statusColor: STATUS_META[o.status].color,
+      statusBg: STATUS_META[o.status].bg,
+      statusLabel: STATUS_META[o.status].label,
+      warehouseFrom: o.counterpartyWarehouse,
+      createdDateTime: o.createdDateTime,
+      shipDateTime: o.shipDateTime,
+      positionsCount: o.positions.length,
+      boxesCount: o.positions.length,
+      responsible: o.responsible,
+      acceptedAt: o.acceptedAt || '—',
+      onClick: () => { window.location.href = 'ProЗапас Заказ.dc.html?id=' + o.id; }
+    }));
+
+    const pageSize = this.state.pageSize;
+    const listTotalPages = Math.max(1, Math.ceil(allOrders.length / pageSize));
+    const listPage = Math.min(this.state.listPage, listTotalPages);
+    const orders = allOrders.slice((listPage - 1) * pageSize, listPage * pageSize);
+    const listPageNumbers = Array.from({ length: listTotalPages }, (_, i) => ({
+      n: i + 1, cls: 'btn btn-icon ' + (i + 1 === listPage ? 'btn-primary' : 'btn-secondary'),
+      onClick: () => this.goToListPage(i + 1)
+    }));
+
+    return {
+      tab,
+      onSetTabIncoming: () => this.setTab('theirs'),
+      onSetTabOutgoing: () => this.setTab('ours'),
+      tabIncomingCls: 'btn ' + (tab === 'theirs' ? 'btn-primary' : 'btn-secondary'),
+      tabOutgoingCls: 'btn ' + (tab === 'ours' ? 'btn-primary' : 'btn-secondary'),
+      isOurs: tab === 'ours',
+      isTheirs: tab === 'theirs',
+      warehouseColLabel: tab === 'ours' ? 'Склад-отправитель' : 'Склад-получатель',
+      orders,
+      ordersEmpty: orders.length === 0,
+      searchValue: search,
+      onSearchChange: (e) => this.setFilter({ search: e.target.value }),
+      statusFilterValue: statusFilter,
+      onStatusFilterChange: (e) => this.setFilter({ statusFilter: e.target.value }),
+      warehouseFilterOptions,
+      warehouseFilterValue: warehouseFilter,
+      onWarehouseFilterChange: (e) => this.setFilter({ warehouseFilter: e.target.value, responsibleFilter: 'all' }),
+      warehouseSelected: warehouseFilter !== 'all',
+      responsibleFilterOptions,
+      responsibleFilterValue: responsibleFilter,
+      onResponsibleFilterChange: (e) => this.setFilter({ responsibleFilter: e.target.value }),
+      dateFromValue: dateFrom,
+      onDateFromChange: (e) => this.setFilter({ dateFrom: e.target.value }),
+      dateToValue: dateTo,
+      onDateToChange: (e) => this.setFilter({ dateTo: e.target.value }),
+      onResetFilters: () => this.resetFilters(),
+      listPageNumbers,
+      listShowPagination: listTotalPages > 1,
+      listPagePrevDisabled: listPage <= 1,
+      listPageNextDisabled: listPage >= listTotalPages,
+      onListPagePrev: () => this.goToListPage(listPage - 1),
+      onListPageNext: () => this.goToListPage(listPage + 1),
+      listRangeText: allOrders.length === 0 ? '' : ((listPage - 1) * pageSize + 1) + '–' + Math.min(listPage * pageSize, allOrders.length) + ' из ' + allOrders.length,
+    };
+  }
+}
+</script>
+</body>
+</html>

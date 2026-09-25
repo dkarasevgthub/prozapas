@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/styles.css">
+  <script src="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/_ds_bundle.js"></script>
+  <style>
+    .navrow{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);cursor:pointer;border-left:2px solid transparent;font-family:var(--font-heading);font-size:16px;color:var(--color-text);text-decoration:none}
+    .navrow svg{flex:none}
+    .navrow:hover{background:var(--color-accent-100)}
+    .navrow.active{background:var(--color-accent-100);border-left-color:var(--color-accent);color:var(--color-accent-800)}
+    .userlink{display:flex;gap:var(--space-3);align-items:center;padding:var(--space-4);text-decoration:none;color:var(--color-text);cursor:pointer;flex:1;min-width:0}
+    .userlink:hover{background:var(--color-accent-100)}
+    .userrow{display:flex;align-items:stretch;border-bottom:1px solid var(--color-divider)}
+    .logoutbtn{display:flex;align-items:center;justify-content:center;width:46px;flex:none;border-left:1px solid var(--color-divider);color:var(--color-neutral-600);cursor:pointer;text-decoration:none}
+    .logoutbtn:hover{background:var(--color-accent-100);color:var(--color-accent-700)}
+  </style>
+</helmet>
+<aside style="width:200px;flex:none;height:100%;background:var(--color-surface);border-right:1px solid var(--color-divider);display:flex;flex-direction:column;font-family:var(--font-body)">
+  <div style="padding:var(--space-6) var(--space-4);border-bottom:1px solid var(--color-divider)">
+    <div style="font-family:var(--font-heading);font-weight:600;font-size:24px;letter-spacing:-0.01em">Pro<span style="color:var(--color-accent-700)">Запас</span></div>
+    <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600);margin-top:2px">учёт и логистика</div>
+  </div>
+  <div class="userrow">
+    <a class="userlink" href="ProЗапас Пользователь.dc.html?id=1">
+      <div style="min-width:0">
+        <div style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Кузнецов И.А.</div>
+        <div style="font-size:12px;color:var(--color-neutral-600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Начальник склада</div>
+      </div>
+    </a>
+    <a class="logoutbtn" href="ProЗапас Вход.dc.html" onClick="{{ onLogout }}" title="Выйти">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5M21 12H9"></path></svg>
+    </a>
+  </div>
+  <nav style="flex:1;padding:var(--space-3) 0;display:flex;flex-direction:column;gap:2px">
+    <a class="{{ homeCls }}" href="{{ hrefs.home }}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V21h14V9.5"></path><path d="M9 21v-6h6v6"></path></svg>
+      <span>Главная</span>
+    </a>
+    <a class="{{ ordersCls }}" href="{{ hrefs.orders }}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="1"></rect><path d="M9 3v3h6V3M9 10h6M9 14h6M9 18h3"></path></svg>
+      <span>Заказы</span>
+    </a>
+    <a class="{{ shippingCls }}" href="{{ hrefs.shipping }}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="13" height="10"></rect><path d="M14 10h4l3 3v4h-7z"></path><circle cx="6" cy="19" r="1.8"></circle><circle cx="17" cy="19" r="1.8"></circle></svg>
+      <span>Отгрузка</span>
+    </a>
+    <a class="{{ receivingCls }}" href="{{ hrefs.receiving }}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"></path><path d="M3 8l9 5 9-5M12 13v8"></path><path d="M8 5.5 16 10"></path></svg>
+      <span>Приемка</span>
+    </a>
+    <a class="{{ catalogCls }}" href="{{ hrefs.catalog }}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z"></path><path d="M5 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2M18 16H7"></path></svg>
+      <span>Справочник</span>
+    </a>
+    <a class="{{ stockCls }}" href="{{ hrefs.stock }}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 7.5 12 12l9-4.5z"></path><path d="M3 7.5v9L12 21l9-4.5v-9M12 12v9"></path></svg>
+      <span>Остатки</span>
+    </a>
+    <a class="{{ usersCls }}" href="{{ hrefs.users }}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      <span>Пользователи</span>
+    </a>
+  </nav>
+  <div style="padding:var(--space-4);border-top:1px solid var(--color-divider);font-size:12px;color:var(--color-neutral-600)">Версия 1.0</div>
+</aside>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;active&quot;: {&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;orders&quot;,&quot;shipping&quot;,&quot;receiving&quot;,&quot;catalog&quot;,&quot;stock&quot;,&quot;users&quot;]}}">
+class Component extends DCLogic {
+  renderVals() {
+    const files = {
+      home: 'ProЗапас Главная.dc.html',
+      orders: 'ProЗапас Заказы.dc.html',
+      shipping: 'ProЗапас Отгрузка.dc.html',
+      receiving: 'ProЗапас Приемка.dc.html',
+      catalog: 'ProЗапас Справочник.dc.html',
+      stock: 'ProЗапас Остатки.dc.html',
+      users: 'ProЗапас Пользователи.dc.html'
+    };
+    const active = this.props.active || 'home';
+    const cls = id => 'navrow' + (active === id ? ' active' : '');
+    return {
+      hrefs: files,
+      onLogout: () => { try { localStorage.removeItem('prozapas_auth_v1'); } catch (e) {} },
+      homeCls: cls('home'), ordersCls: cls('orders'), shippingCls: cls('shipping'),
+      receivingCls: cls('receiving'), catalogCls: cls('catalog'), stockCls: cls('stock'), usersCls: cls('users')
+    };
+  }
+}
+</script>
+</body>
+</html>

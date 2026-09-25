@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/styles.css">
+  <script src="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/_ds_bundle.js"></script>
+  <style>
+    html{overflow-y:scroll}
+    body{margin:0;background:var(--color-bg);color:var(--color-text)}
+    a{color:var(--color-accent-700)}
+    a:hover{color:var(--color-accent)}
+    .table{font-size:16px}
+    .table th{font-size:13px;white-space:normal;line-height:1.3;padding:var(--space-1) var(--space-2);vertical-align:bottom;overflow-wrap:break-word;text-transform:none;letter-spacing:normal;font-weight:600}
+    .table td{padding:var(--space-2);line-height:1.25;overflow-wrap:break-word}
+    .breadcrumb{font-size:18px;color:var(--color-neutral-600);margin-bottom:var(--space-2)}
+    main h1{font-size:44px}
+    main h4{font-size:22px}
+    .breadcrumb a{color:var(--color-neutral-600);text-decoration:none;cursor:pointer}
+    .breadcrumb a:hover{color:var(--color-accent-700)}
+    .clickable{cursor:pointer;transition:border-color .12s ease,background .12s ease}
+    tr.clickable:hover td{background:color-mix(in srgb, var(--color-text) 4%, transparent)}
+    tr.active-row td{background:var(--color-accent-100)}
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--space-3);padding:var(--space-8) var(--space-4);color:var(--color-neutral-600)}
+    .empty-state svg{color:var(--color-neutral-400)}
+    .diff-bad{color:#b3261e;font-weight:600}
+    .diff-ok{color:var(--color-neutral-600)}
+  </style>
+</helmet>
+<div style="display:flex;min-height:100vh;width:100%;font-family:var(--font-body);overflow-x:hidden">
+  <dc-import name="Sidebar" active="receiving" hint-size="200px,100%"></dc-import>
+  <main style="flex:1;min-width:0;padding:var(--space-8) var(--space-8) var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)">
+
+    <div class="breadcrumb"><a href="ProЗапас Главная.dc.html">ProЗапас</a> / <a onClick="{{ onBreadcrumbSection }}">Приемка</a><sc-if value="{{ hasBreadcrumbExtra }}" hint-placeholder-val="{{ false }}"> / {{ breadcrumbExtra }}</sc-if></div>
+
+    <sc-if value="{{ receivingIsList }}" hint-placeholder-val="{{ true }}">
+    <div>
+      <h1 style="margin-bottom:4px">Приемка</h1>
+      <div style="font-size:14px;color:var(--color-neutral-600)">Партии от поставщиков, которые нужно принять</div>
+    </div>
+    <div style="display:flex;align-items:end;gap:var(--space-4);flex-wrap:wrap">
+      <div class="field" style="min-width:220px;margin:0">
+        <label>Поиск</label>
+        <input class="input" type="text" placeholder="Номер заказа" value="{{ searchValue }}" onChange="{{ onSearchChange }}">
+      </div>
+      <div class="field" style="min-width:160px;margin:0">
+        <label>Статус</label>
+        <select class="input" value="{{ statusFilterValue }}" onChange="{{ onStatusFilterChange }}">
+          <option value="all">Все статусы</option>
+          <option value="waiting">Ожидает</option>
+          <option value="progress">В работе</option>
+          <option value="done">Принят</option>
+        </select>
+      </div>
+      <div class="field" style="width:90px;margin:0">
+        <label>Вес от, кг</label>
+        <input class="input" type="number" value="{{ weightMinValue }}" onChange="{{ onWeightMinChange }}">
+      </div>
+      <div class="field" style="width:90px;margin:0">
+        <label>Вес до, кг</label>
+        <input class="input" type="number" value="{{ weightMaxValue }}" onChange="{{ onWeightMaxChange }}">
+      </div>
+      <div class="field" style="min-width:150px;margin:0">
+        <label>Дата создания от</label>
+        <input class="input" type="date" value="{{ dateFromValue }}" onChange="{{ onDateFromChange }}">
+      </div>
+      <div class="field" style="min-width:150px;margin:0">
+        <label>Дата создания до</label>
+        <input class="input" type="date" value="{{ dateToValue }}" onChange="{{ onDateToChange }}">
+      </div>
+      <div class="field" style="min-width:150px;margin:0">
+        <label>Дата отгрузки от</label>
+        <input class="input" type="date" value="{{ shipDateFromValue }}" onChange="{{ onShipDateFromChange }}">
+      </div>
+      <div class="field" style="min-width:150px;margin:0">
+        <label>Дата отгрузки до</label>
+        <input class="input" type="date" value="{{ shipDateToValue }}" onChange="{{ onShipDateToChange }}">
+      </div>
+      <button class="btn btn-ghost" onClick="{{ onResetFilters }}">Сбросить</button>
+    </div>
+
+    <div class="blueprint" style="padding:var(--space-4)">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <table class="table" style="table-layout:fixed;width:100%;font-size:14px">
+        <thead><tr>
+          <th style="width:65px">Заказ</th><th style="width:110px">Статус</th><th style="width:95px">Прогресс</th><th style="width:80px">Вес, кг</th><th style="width:150px">Ответственный</th><th style="width:90px">Создан</th><th style="width:90px">Принят</th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ receivingBatches }}" as="b" hint-placeholder-count="3">
+            <tr class="clickable" onClick="{{ b.onClick }}">
+              <td style="font-family:var(--font-heading)">№{{ b.number }}</td>
+              <td><span class="tag" style="border:none;padding:3px 10px;font-weight:700;color:{{ b.statusColor }};background:{{ b.statusBg }}">{{ b.statusLabel }}</span></td>
+              <td>{{ b.progress }}</td>
+              <td style="color:var(--color-neutral-600)">{{ b.totalWeight }} кг</td>
+              <td style="color:var(--color-neutral-600)">{{ b.responsible }}</td>
+              <td style="color:var(--color-neutral-600)">{{ b.createdDateTime }}</td>
+              <td style="color:var(--color-neutral-600)">{{ b.shipDateTime }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <sc-if value="{{ receivingBatchesEmpty }}" hint-placeholder-val="{{ false }}">
+        <div class="empty-state">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+          <div style="font-size:13px">Ничего не найдено по этим условиям</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ listShowPagination }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);margin-top:var(--space-4)">
+          <div style="font-size:13px;color:var(--color-neutral-600)">{{ listRangeText }}</div>
+          <div style="display:flex;align-items:center;gap:var(--space-2)">
+            <button class="btn btn-secondary btn-icon" disabled="{{ listPagePrevDisabled }}" onClick="{{ onListPagePrev }}">‹</button>
+            <sc-for list="{{ listPageNumbers }}" as="pn" hint-placeholder-count="3">
+              <button class="{{ pn.cls }}" onClick="{{ pn.onClick }}">{{ pn.n }}</button>
+            </sc-for>
+            <button class="btn btn-secondary btn-icon" disabled="{{ listPageNextDisabled }}" onClick="{{ onListPageNext }}">›</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ receivingIsDetail }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)">
+      <div>
+        <h1 style="margin-bottom:4px">Заказ №{{ receivingDoc.number }}</h1>
+        <div style="font-size:14px;color:var(--color-neutral-600)">Приём товаров и материалов от поставщиков</div>
+      </div>
+      <button class="btn btn-primary" onClick="{{ completeReceiving }}">Завершить приемку</button>
+    </div>
+
+    <div class="blueprint" style="padding:var(--space-4);display:flex;gap:var(--space-8);flex-wrap:wrap">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Статус</div><span class="tag" style="font-size:12px;padding:5px 12px;white-space:nowrap;border:none;font-weight:700;color:{{ receivingStatusColor }};background:{{ receivingStatusBg }}">{{ receivingStatusLabel }}</span></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Ответственный</div><div style="font-family:var(--font-heading);font-size:18px">{{ receivingResponsible }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Дата отгрузки</div><div style="font-family:var(--font-heading);font-size:18px">{{ receivingDoc.shipDateTime }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Дата принятия</div><div style="font-family:var(--font-heading);font-size:18px">{{ receivingAcceptedAt }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Дата создания</div><div style="font-family:var(--font-heading);font-size:18px">{{ receivingDoc.createdDateTime }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Позиций</div><div style="font-family:var(--font-heading);font-size:18px">{{ receivingDoc.positionsCount }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Коробок</div><div style="font-family:var(--font-heading);font-size:18px">{{ receivingDoc.totalBoxes }}</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Общий вес</div><div style="font-family:var(--font-heading);font-size:18px">{{ receivingDoc.totalWeight }} кг</div></div>
+      <div><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Прогресс</div><div style="font-family:var(--font-heading);font-size:18px">{{ receivingProgress }}</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--space-6);align-items:stretch">
+      <div class="blueprint" style="padding:var(--space-4)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <sc-if value="{{ hasActiveBox }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap">
+            <div>
+              <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:2px">В работе</div>
+              <div style="font-family:var(--font-heading);font-size:18px">{{ activeBoxName }} · {{ activeBoxLabel }} · {{ activeBoxExpectedWeight }} кг</div>
+              <div style="font-size:13px;color:var(--color-neutral-600);margin-top:2px">Поставьте коробку на весы и отсканируйте штрихкод ещё раз для подтверждения</div>
+            </div>
+            <button class="btn btn-ghost" onClick="{{ onCancelActive }}">Отменить</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noActiveBox }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:12px;color:var(--color-neutral-600)">Отсканируйте штрихкод коробки, чтобы начать приёмку</div>
+        </sc-if>
+        <input class="input" style="width:100%;margin-top:var(--space-3);font-family:var(--font-heading);letter-spacing:.02em" placeholder="Штрихкод коробки, например WH1281187201187-02" value="{{ scanInputValue }}" onChange="{{ onScanInputChange }}" onKeyDown="{{ onScanKeyDown }}">
+        <sc-if value="{{ scanError }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12px;color:var(--color-accent-800);margin-top:var(--space-2)">{{ scanErrorText }}</div>
+        </sc-if>
+      </div>
+      <div class="blueprint" style="padding:var(--space-4);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-2)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Весы</div>
+        <div style="font-family:var(--font-heading);font-size:36px;color:var(--color-accent-700)">{{ scaleReading }}</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);flex:1">
+
+      <div class="blueprint" style="padding:var(--space-4)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <h4 style="margin-bottom:var(--space-3)">К сканированию</h4>
+        <table class="table" style="table-layout:fixed;width:100%">
+          <thead><tr>
+            <th style="width:28%">Штрихкод</th><th style="width:16%">Артикул</th><th style="width:36%">Наименование</th><th style="width:20%">Вес по заказу</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{ receivingPending }}" as="p" hint-placeholder-count="4">
+              <tr class="{{ p.rowClass }}">
+                <td class="clickable" style="font-family:var(--font-heading);color:var(--color-accent-700)" onClick="{{ p.onClick }}">{{ p.barcode }}</td>
+                <td style="color:var(--color-neutral-600)">{{ p.article }}</td>
+                <td style="font-size:13px">{{ p.name }}</td>
+                <td>{{ p.expectedWeight }} кг</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <sc-if value="{{ receivingPendingEmpty }}" hint-placeholder-val="{{ false }}">
+          <div class="empty-state" style="padding:var(--space-6) var(--space-4)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+            <div style="font-size:13px">Все коробки отсканированы</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div class="blueprint" style="padding:var(--space-4)">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <h4 style="margin-bottom:var(--space-3)">Отсканировано</h4>
+        <table class="table" style="table-layout:fixed;width:100%">
+          <thead><tr>
+            <th style="width:26%">Штрихкод</th><th style="width:14%">Артикул</th><th style="width:26%">Наименование</th><th style="width:17%">Вес фактический</th><th style="width:17%">Расхождение</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{ receivingScanned }}" as="s" hint-placeholder-count="3">
+              <tr>
+                <td style="font-family:var(--font-heading);color:var(--color-neutral-600)">{{ s.barcode }}</td>
+                <td style="color:var(--color-neutral-600)">{{ s.article }}</td>
+                <td style="font-size:13px">{{ s.name }}</td>
+                <td>{{ s.weightCell }}</td>
+                <td class="{{ s.diffClass }}">{{ s.diffText }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <sc-if value="{{ receivingScannedEmpty }}" hint-placeholder-val="{{ true }}">
+          <div class="empty-state" style="padding:var(--space-6) var(--space-4)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M9 9h.01M15 9h.01M9 15h6"></path></svg>
+            <div style="font-size:13px">Пока ничего не отсканировано</div>
+          </div>
+        </sc-if>
+      </div>
+
+    </div>
+    </sc-if>
+
+  </main>
+
+  <sc-if value="{{ isCompleteWarningOpen }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" style="position:fixed" onClick="{{ onCloseCompleteWarning }}">
+    <div class="dialog" style="background:var(--color-surface)" onClick="{{ stopClickMain }}">
+      <div class="dialog-title">Не все коробки отсканированы</div>
+      <div class="dialog-body">
+        <div style="margin-bottom:var(--space-3)">Осталось не отсканировано: {{ missingCount }}. Эти позиции будут отмечены как отсутствующие.</div>
+        <div style="display:flex;flex-direction:column;gap:var(--space-2);max-height:200px;overflow-y:auto">
+          <sc-for list="{{ missingList }}" as="m" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;gap:var(--space-4);font-size:13px;padding:var(--space-2) 0;border-bottom:1px solid var(--color-divider)">
+              <span style="color:var(--color-neutral-600)">{{ m.barcode }}</span>
+              <span>{{ m.name }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" onClick="{{ onCloseCompleteWarning }}">Отмена</button>
+        <button class="btn btn-primary" onClick="{{ onConfirmCompleteWithMissing }}">Завершить с недостачей</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const RECEIVING_BATCHES = [
+  { id: 1, number: '1187', warehouseId: '128', supplier: '«Метизпром»', shipDateTime: '21.07.2026 09:40', createdDateTime: '18.07.2026 14:05', positions: [
+    { article: '100421', name: 'Болт М8×40 ГОСТ 7798', boxes: 1, unitWeight: 22.4 },
+    { article: '100433', name: 'Гайка М8 ГОСТ 5915', boxes: 1, unitWeight: 18.0 },
+    { article: '201187', name: 'Подшипник 6205-2RS', boxes: 3, unitWeight: 8.2 },
+    { article: '100458', name: 'Лист стальной 2×1250×2500', boxes: 2, unitWeight: 145.0 }
+  ]},
+  { id: 2, number: '1192', warehouseId: '128', supplier: '«Металлторг»', shipDateTime: '21.07.2026 11:15', createdDateTime: '19.07.2026 10:22', positions: [
+    { article: '100458', name: 'Лист стальной 2×1250×2500', boxes: 3, unitWeight: 145.0 },
+    { article: '100477', name: 'Уголок стальной 50×50×5', boxes: 2, unitWeight: 60.0 }
+  ]},
+  { id: 3, number: '1175', warehouseId: '128', supplier: 'ООО «ПодшипникСнаб»', shipDateTime: '20.07.2026 16:30', createdDateTime: '16.07.2026 09:50', positions: [
+    { article: '201187', name: 'Подшипник 6205-2RS', boxes: 2, unitWeight: 8.2 },
+    { article: '201204', name: 'Ремень приводной А-1250', boxes: 1, unitWeight: 4.5 }
+  ]},
+  { id: 4, number: '1201', warehouseId: '128', supplier: '«Стальресурс»', shipDateTime: '22.07.2026 08:15', createdDateTime: '19.07.2026 12:40', positions: [
+    { article: '100477', name: 'Уголок стальной 50×50×5', boxes: 2, unitWeight: 60.0 }
+  ]},
+  { id: 5, number: '1204', warehouseId: '128', supplier: '«Метизпром»', shipDateTime: '22.07.2026 10:00', createdDateTime: '20.07.2026 09:15', positions: [
+    { article: '100421', name: 'Болт М8×40 ГОСТ 7798', boxes: 2, unitWeight: 22.4 }
+  ]},
+  { id: 6, number: '1206', warehouseId: '128', supplier: 'ООО «ПодшипникСнаб»', shipDateTime: '22.07.2026 13:20', createdDateTime: '20.07.2026 15:30', positions: [
+    { article: '201187', name: 'Подшипник 6205-2RS', boxes: 1, unitWeight: 8.2 }
+  ]},
+  { id: 7, number: '1209', warehouseId: '128', supplier: '«Металлторг»', shipDateTime: '23.07.2026 09:00', createdDateTime: '21.07.2026 11:05', positions: [
+    { article: '100458', name: 'Лист стальной 2×1250×2500', boxes: 1, unitWeight: 145.0 }
+  ]},
+  { id: 8, number: '1211', warehouseId: '128', supplier: '«Стальресурс»', shipDateTime: '23.07.2026 14:45', createdDateTime: '21.07.2026 16:10', positions: [
+    { article: '100477', name: 'Уголок стальной 50×50×5', boxes: 1, unitWeight: 60.0 }
+  ]},
+  { id: 9, number: '1213', warehouseId: '128', supplier: '«Метизпром»', shipDateTime: '24.07.2026 08:30', createdDateTime: '22.07.2026 10:50', positions: [
+    { article: '100433', name: 'Гайка М8 ГОСТ 5915', boxes: 1, unitWeight: 18.0 }
+  ]},
+  { id: 10, number: '1216', warehouseId: '128', supplier: '«Металлторг»', shipDateTime: '24.07.2026 09:50', createdDateTime: '22.07.2026 12:15', positions: [
+    { article: '201204', name: 'Ремень приводной А-1250', boxes: 2, unitWeight: 4.5 }
+  ]},
+  { id: 11, number: '1218', warehouseId: '128', supplier: 'ООО «ПодшипникСнаб»', shipDateTime: '24.07.2026 11:30', createdDateTime: '22.07.2026 14:40', positions: [
+    { article: '201187', name: 'Подшипник 6205-2RS', boxes: 2, unitWeight: 8.2 }
+  ]},
+  { id: 12, number: '1221', warehouseId: '128', supplier: '«Стальресурс»', shipDateTime: '24.07.2026 14:05', createdDateTime: '23.07.2026 08:20', positions: [
+    { article: '100458', name: 'Лист стальной 2×1250×2500', boxes: 3, unitWeight: 145.0 }
+  ]},
+  { id: 13, number: '1223', warehouseId: '128', supplier: '«Метизпром»', shipDateTime: '25.07.2026 08:00', createdDateTime: '23.07.2026 10:05', positions: [
+    { article: '100421', name: 'Болт М8×40 ГОСТ 7798', boxes: 1, unitWeight: 22.4 },
+    { article: '100433', name: 'Гайка М8 ГОСТ 5915', boxes: 1, unitWeight: 18.0 }
+  ]},
+  { id: 14, number: '1226', warehouseId: '128', supplier: '«Металлторг»', shipDateTime: '25.07.2026 10:15', createdDateTime: '23.07.2026 13:30', positions: [
+    { article: '100477', name: 'Уголок стальной 50×50×5', boxes: 2, unitWeight: 60.0 }
+  ]},
+  { id: 15, number: '1229', warehouseId: '128', supplier: 'ООО «ПодшипникСнаб»', shipDateTime: '25.07.2026 12:40', createdDateTime: '23.07.2026 16:00', positions: [
+    { article: '201187', name: 'Подшипник 6205-2RS', boxes: 1, unitWeight: 8.2 },
+    { article: '201204', name: 'Ремень приводной А-1250', boxes: 1, unitWeight: 4.5 }
+  ]},
+  { id: 16, number: '1231', warehouseId: '128', supplier: '«Стальресурс»', shipDateTime: '25.07.2026 15:00', createdDateTime: '24.07.2026 09:10', positions: [
+    { article: '100458', name: 'Лист стальной 2×1250×2500', boxes: 1, unitWeight: 145.0 }
+  ]},
+  { id: 17, number: '1234', warehouseId: '128', supplier: '«Метизпром»', shipDateTime: '26.07.2026 08:20', createdDateTime: '24.07.2026 11:45', positions: [
+    { article: '100433', name: 'Гайка М8 ГОСТ 5915', boxes: 2, unitWeight: 18.0 }
+  ]},
+  { id: 18, number: '1237', warehouseId: '128', supplier: '«Металлторг»', shipDateTime: '26.07.2026 09:45', createdDateTime: '24.07.2026 14:00', positions: [
+    { article: '100458', name: 'Лист стальной 2×1250×2500', boxes: 2, unitWeight: 145.0 },
+    { article: '100477', name: 'Уголок стальной 50×50×5', boxes: 1, unitWeight: 60.0 }
+  ]},
+  { id: 19, number: '1240', warehouseId: '128', supplier: 'ООО «ПодшипникСнаб»', shipDateTime: '26.07.2026 13:10', createdDateTime: '25.07.2026 08:35', positions: [
+    { article: '201187', name: 'Подшипник 6205-2RS', boxes: 3, unitWeight: 8.2 }
+  ]},
+  { id: 20, number: '1243', warehouseId: '128', supplier: '«Стальресурс»', shipDateTime: '26.07.2026 15:50', createdDateTime: '25.07.2026 10:55', positions: [
+    { article: '100421', name: 'Болт М8×40 ГОСТ 7798', boxes: 1, unitWeight: 22.4 }
+  ]},
+  { id: 21, number: '1245', warehouseId: '128', supplier: '«Метизпром»', shipDateTime: '27.07.2026 08:10', createdDateTime: '25.07.2026 13:20', positions: [
+    { article: '201204', name: 'Ремень приводной А-1250', boxes: 1, unitWeight: 4.5 }
+  ]},
+  { id: 22, number: '1248', warehouseId: '128', supplier: '«Металлторг»', shipDateTime: '27.07.2026 10:30', createdDateTime: '25.07.2026 15:40', positions: [
+    { article: '100458', name: 'Лист стальной 2×1250×2500', boxes: 1, unitWeight: 145.0 }
+  ]},
+  { id: 23, number: '1250', warehouseId: '128', supplier: 'ООО «ПодшипникСнаб»', shipDateTime: '27.07.2026 12:00', createdDateTime: '26.07.2026 09:05', positions: [
+    { article: '201187', name: 'Подшипник 6205-2RS', boxes: 2, unitWeight: 8.2 }
+  ]},
+  { id: 24, number: '1253', warehouseId: '128', supplier: '«Стальресурс»', shipDateTime: '27.07.2026 14:25', createdDateTime: '26.07.2026 11:15', positions: [
+    { article: '100477', name: 'Уголок стальной 50×50×5', boxes: 3, unitWeight: 60.0 }
+  ]},
+  { id: 25, number: '1256', warehouseId: '128', supplier: '«Метизпром»', shipDateTime: '27.07.2026 16:40', createdDateTime: '26.07.2026 13:50', positions: [
+    { article: '100421', name: 'Болт М8×40 ГОСТ 7798', boxes: 1, unitWeight: 22.4 },
+    { article: '100433', name: 'Гайка М8 ГОСТ 5915', boxes: 1, unitWeight: 18.0 }
+  ]}
+];
+
+const CODE1C_BY_ARTICLE = {
+  '100421': 'ТМЦ-00421', '100433': 'ТМЦ-00433', '201187': 'ТМЦ-01187',
+  '201204': 'ТМЦ-01204', '100458': 'ТМЦ-00458', '100477': 'ТМЦ-00477'
+};
+
+function buildBoxes(batch) {
+  const boxes = [];
+  batch.positions.forEach(pos => {
+    const base = 'WH' + batch.warehouseId + batch.number + pos.article;
+    for (let i = 1; i <= pos.boxes; i++) {
+      boxes.push({
+        barcode: base + (pos.boxes > 1 ? '-' + String(i).padStart(2, '0') : ''),
+        orderNumber: batch.number,
+        article: pos.article,
+        code1c: CODE1C_BY_ARTICLE[pos.article] || '—',
+        name: pos.name,
+        boxLabel: pos.boxes > 1 ? `Коробка ${i} из ${pos.boxes}` : 'Коробка 1 из 1',
+        expectedWeight: pos.unitWeight.toFixed(1)
+      });
+    }
+  });
+  return boxes;
+}
+
+function parseRuDate(str) {
+  const [d, m, y] = str.split(' ')[0].split('.').map(Number);
+  return new Date(y, m - 1, d);
+}
+const CURRENT_USER = 'Кузнецов И.А.';
+
+const ORDERS_STORAGE_KEY = 'prozapas_orders_v4';
+const ORDER_UNIT_WEIGHT = {
+  '100421': 0.02, '100433': 0.01, '201187': 0.08, '201204': 0.45,
+  '100458': 72.5, '100477': 4.5, '100512': 1.6, '300098': 24.0
+};
+function loadOrders() {
+  try {
+    const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [];
+}
+function saveOrders(list) { localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(list)); }
+function orderToBatch(o) {
+  return {
+    id: 'ord-' + o.id, number: o.number, warehouseId: '128', supplier: o.counterpartyWarehouse,
+    shipDateTime: o.shipDateTime, createdDateTime: o.createdDateTime,
+    isOrder: true, orderId: o.id,
+    positions: o.positions.map(p => ({ article: p.article, name: p.name, boxes: 1, unitWeight: (ORDER_UNIT_WEIGHT[p.article] || 1) * p.qty }))
+  };
+}
+function getAllBatches() {
+  const orderBatches = loadOrders().filter(o => o.direction === 'ours' && (o.status === 'processing' || o.status === 'received')).map(orderToBatch);
+  return RECEIVING_BATCHES.concat(orderBatches);
+}
+function getBatch(id) { return getAllBatches().find(b => b.id === id); }
+function batchTotalBoxes(batch) { return batch.positions.reduce((sum, p) => sum + p.boxes, 0); }
+function batchTotalWeight(batch) { return batch.positions.reduce((sum, p) => sum + p.boxes * p.unitWeight, 0).toFixed(1); }
+
+class Component extends DCLogic {
+  state = {
+    activeBatchId: null, batchData: {},
+    scanInput: '', scanError: false, scanErrorText: '', lastWeight: null, activeBox: null,
+    listPage: 1, pageSize: 20,
+    search: '', statusFilter: 'all', weightMin: '', weightMax: '', dateFrom: '', dateTo: '', shipDateFrom: '', shipDateTo: '',
+    isCompleteWarningOpen: false
+  };
+
+  setFilter(patch) { this.setState({ ...patch, listPage: 1 }); }
+  resetFilters() { this.setState({ search: '', statusFilter: 'all', weightMin: '', weightMax: '', dateFrom: '', dateTo: '', shipDateFrom: '', shipDateTo: '', listPage: 1 }); }
+
+  ROW_HEIGHT = 41;
+  RESERVED_HEIGHT = 490;
+
+  computePageSize() {
+    const fit = Math.floor((window.innerHeight - this.RESERVED_HEIGHT) / this.ROW_HEIGHT);
+    return Math.max(5, fit);
+  }
+
+  componentDidMount() {
+    this.setState({ pageSize: this.computePageSize() });
+    this._onResize = () => this.setState({ pageSize: this.computePageSize() });
+    window.addEventListener('resize', this._onResize);
+  }
+
+  componentWillUnmount() {
+    if (this._onResize) window.removeEventListener('resize', this._onResize);
+  }
+
+  goToListPage(n) { this.setState({ listPage: n }); }
+
+  weightVariance(barcode) {
+    let hash = 0;
+    for (let i = 0; i < barcode.length; i++) hash = (hash * 31 + barcode.charCodeAt(i)) % 1000;
+    return ((hash % 17) - 8) / 100;
+  }
+
+  openBatch(id) {
+    this.setState(st => {
+      const bd = { ...st.batchData };
+      if (!bd[id]) bd[id] = { pending: buildBoxes(getBatch(id)), scanned: [], done: false, responsible: null };
+      return { batchData: bd, activeBatchId: id, activeBox: null, scanInput: '', scanError: false, lastWeight: null };
+    });
+  }
+
+  backToBatches() { this.setState({ activeBatchId: null, activeBox: null, scanInput: '', scanError: false }); }
+
+  scanBarcode(barcode) {
+    const code = (barcode || '').trim().toUpperCase();
+    if (!code) return;
+    this.setState(st => {
+      const id = st.activeBatchId;
+      if (!id) return null;
+      const bd = st.batchData[id];
+      if (!st.activeBox) {
+        const item = bd.pending.find(p => p.barcode === code);
+        if (!item) return { scanError: true, scanErrorText: 'Штрихкод не найден в этой партии.', scanInput: '' };
+        const newBd = bd.responsible ? bd : { ...bd, responsible: CURRENT_USER };
+        return { batchData: { ...st.batchData, [id]: newBd }, activeBox: item, scanInput: '', scanError: false };
+      }
+      if (code !== st.activeBox.barcode) {
+        return { scanError: true, scanErrorText: 'Это другая коробка. Поставьте на весы ту же коробку и отсканируйте ещё раз.', scanInput: '' };
+      }
+      const item = st.activeBox;
+      const variance = this.weightVariance(item.barcode);
+      const actualWeight = (parseFloat(item.expectedWeight) * (1 + variance)).toFixed(1);
+      const diffKg = (actualWeight - parseFloat(item.expectedWeight)).toFixed(1);
+      const diffPercent = Math.abs(variance * 100).toFixed(1);
+      const newBd = { ...st.batchData, [id]: {
+        ...bd,
+        pending: bd.pending.filter(p => p.barcode !== item.barcode),
+        scanned: [...bd.scanned, { ...item, actualWeight, diffKg, diffPercent }]
+      }};
+      return { batchData: newBd, scanInput: '', scanError: false, lastWeight: actualWeight, activeBox: null };
+    });
+  }
+
+  cancelActive() { this.setState({ activeBox: null, scanInput: '', scanError: false }); }
+
+  requestCompleteReceiving() {
+    const id = this.state.activeBatchId;
+    const bd = this.state.batchData[id];
+    if (bd && bd.pending.length > 0) {
+      this.setState({ isCompleteWarningOpen: true });
+      return;
+    }
+    this.completeReceivingFn();
+  }
+
+  closeCompleteWarning() { this.setState({ isCompleteWarningOpen: false }); }
+
+  completeReceivingFn() {
+    const id = this.state.activeBatchId;
+    const batch = getBatch(id);
+    this.setState(st => {
+      const bd = st.batchData[id];
+      const now = new Date();
+      const acceptedAt = now.toLocaleDateString('ru-RU') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      const missingEntries = bd.pending.map(p => ({ ...p, isMissing: true }));
+      return {
+        batchData: { ...st.batchData, [id]: {
+          ...bd, done: true, acceptedAt,
+          pending: [],
+          scanned: [...bd.scanned, ...missingEntries]
+        } },
+        isCompleteWarningOpen: false
+      };
+    });
+    if (batch && batch.isOrder) {
+      const orders = loadOrders();
+      const idx = orders.findIndex(o => o.id === batch.orderId);
+      if (idx !== -1) {
+        const now = new Date();
+        const acceptedAt = now.toLocaleDateString('ru-RU') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        orders[idx] = { ...orders[idx], status: 'received', acceptedAt, history: [...orders[idx].history, { status: 'received', dateTime: acceptedAt }] };
+        saveOrders(orders);
+      }
+    }
+  }
+
+  renderVals() {
+    const activeId = this.state.activeBatchId;
+    const activeBatch = activeId ? getBatch(activeId) : null;
+    const activeBd = activeId ? this.state.batchData[activeId] : null;
+
+    const { search, statusFilter, weightMin, weightMax, dateFrom, dateTo, shipDateFrom, shipDateTo } = this.state;
+    const searchLc = search.trim().toLowerCase();
+    const statusKey = { waiting: 'Ожидает', progress: 'В работе', done: 'Принят' };
+
+    const allReceivingBatches = getAllBatches().filter(b => {
+      if (searchLc && !b.number.toLowerCase().includes(searchLc)) return false;
+      const bd = this.state.batchData[b.id];
+      const scannedCount = bd ? bd.scanned.length : 0;
+      const done = bd ? bd.done : false;
+      const label = done ? 'Принят' : (scannedCount > 0 ? 'В работе' : 'Ожидает');
+      if (statusFilter !== 'all' && label !== statusKey[statusFilter]) return false;
+      const weight = parseFloat(batchTotalWeight(b));
+      if (weightMin !== '' && weight < parseFloat(weightMin)) return false;
+      if (weightMax !== '' && weight > parseFloat(weightMax)) return false;
+      const createdDate = parseRuDate(b.createdDateTime);
+      if (dateFrom && createdDate < new Date(dateFrom)) return false;
+      if (dateTo && createdDate > new Date(dateTo)) return false;
+      const shipDate = parseRuDate(b.shipDateTime);
+      if (shipDateFrom && shipDate < new Date(shipDateFrom)) return false;
+      if (shipDateTo && shipDate > new Date(shipDateTo)) return false;
+      return true;
+    }).map(b => {
+      const bd = this.state.batchData[b.id];
+      const total = batchTotalBoxes(b);
+      const scannedCount = bd ? bd.scanned.length : 0;
+      const done = bd ? bd.done : false;
+      return {
+        number: b.number,
+        supplier: b.supplier,
+        statusColor: done ? 'var(--color-accent-700)' : (scannedCount > 0 ? 'var(--color-accent-2-700)' : 'var(--color-neutral-800)'),
+        statusBg: !done ? (scannedCount > 0 ? 'var(--color-accent-2-100)' : 'var(--color-neutral-200)') : 'transparent',
+        statusLabel: done ? 'Принят' : (scannedCount > 0 ? 'В работе' : 'Ожидает'),
+        progress: scannedCount + ' из ' + total,
+        totalWeight: batchTotalWeight(b),
+        totalBoxes: total,
+        positionsCount: b.positions.length,
+        shipDateTime: (done && bd.acceptedAt) ? bd.acceptedAt.split(' ')[0] : '—',
+        createdDateTime: b.createdDateTime.split(' ')[0],
+        responsible: bd && bd.responsible ? bd.responsible : '—',
+        onClick: () => this.openBatch(b.id)
+      };
+    });
+    const pageSize = this.state.pageSize;
+    const listTotalPages = Math.max(1, Math.ceil(allReceivingBatches.length / pageSize));
+    const listPage = Math.min(this.state.listPage, listTotalPages);
+    const receivingBatches = allReceivingBatches.slice((listPage - 1) * pageSize, listPage * pageSize);
+    const listPageNumbers = Array.from({ length: listTotalPages }, (_, i) => ({
+      n: i + 1,
+      cls: 'btn btn-icon ' + (i + 1 === listPage ? 'btn-primary' : 'btn-secondary'),
+      onClick: () => this.goToListPage(i + 1)
+    }));
+
+    const receivingPending = activeBd ? activeBd.pending.map(p => ({
+      ...p,
+      rowClass: this.state.activeBox && this.state.activeBox.barcode === p.barcode ? 'active-row' : '',
+      onClick: () => this.scanBarcode(p.barcode)
+    })) : [];
+    const total = activeBatch ? batchTotalBoxes(activeBatch) : 0;
+    const scannedCount = activeBd ? activeBd.scanned.length : 0;
+
+    return {
+      onBreadcrumbSection: () => this.backToBatches(),
+      hasBreadcrumbExtra: !!activeId,
+      breadcrumbExtra: activeBatch ? '№' + activeBatch.number : '',
+      receivingBatches,
+      receivingBatchesEmpty: receivingBatches.length === 0,
+      searchValue: search,
+      onSearchChange: (e) => this.setFilter({ search: e.target.value }),
+      statusFilterValue: statusFilter,
+      onStatusFilterChange: (e) => this.setFilter({ statusFilter: e.target.value }),
+      weightMinValue: weightMin,
+      onWeightMinChange: (e) => this.setFilter({ weightMin: e.target.value }),
+      weightMaxValue: weightMax,
+      onWeightMaxChange: (e) => this.setFilter({ weightMax: e.target.value }),
+      dateFromValue: dateFrom,
+      onDateFromChange: (e) => this.setFilter({ dateFrom: e.target.value }),
+      dateToValue: dateTo,
+      onDateToChange: (e) => this.setFilter({ dateTo: e.target.value }),
+      shipDateFromValue: shipDateFrom,
+      onShipDateFromChange: (e) => this.setFilter({ shipDateFrom: e.target.value }),
+      shipDateToValue: shipDateTo,
+      onShipDateToChange: (e) => this.setFilter({ shipDateTo: e.target.value }),
+      onResetFilters: () => this.resetFilters(),
+      listPageNumbers,
+      listShowPagination: listTotalPages > 1,
+      listPagePrevDisabled: listPage <= 1,
+      listPageNextDisabled: listPage >= listTotalPages,
+      onListPagePrev: () => this.goToListPage(listPage - 1),
+      onListPageNext: () => this.goToListPage(listPage + 1),
+      listRangeText: allReceivingBatches.length === 0 ? '' : ((listPage - 1) * pageSize + 1) + '–' + Math.min(listPage * pageSize, allReceivingBatches.length) + ' из ' + allReceivingBatches.length,
+      receivingIsList: !activeId,
+      receivingIsDetail: !!activeId,
+      receivingAcceptedAt: (activeBd && activeBd.acceptedAt) ? activeBd.acceptedAt : '—',
+      receivingDoc: activeBatch ? {
+        ...activeBatch,
+        positionsCount: activeBatch.positions.length,
+        totalBoxes: batchTotalBoxes(activeBatch),
+        totalWeight: batchTotalWeight(activeBatch)
+      } : { number: '', supplier: '', shipDateTime: '', createdDateTime: '', positionsCount: '', totalBoxes: '', totalWeight: '' },
+      receivingPending,
+      receivingScanned: (activeBd ? activeBd.scanned : []).map(s => ({
+        ...s,
+        weightCell: s.isMissing ? '—' : (s.actualWeight + ' кг'),
+        diffText: s.isMissing ? 'Отсутствует' : ((s.diffKg >= 0 ? '+' : '-') + s.diffPercent + ' %'),
+        diffClass: 'diff-ok'
+      })),
+      isCompleteWarningOpen: this.state.isCompleteWarningOpen,
+      missingCount: activeBd ? activeBd.pending.length : 0,
+      missingList: activeBd ? activeBd.pending : [],
+      onCloseCompleteWarning: () => this.closeCompleteWarning(),
+      onConfirmCompleteWithMissing: () => this.completeReceivingFn(),
+      stopClickMain: (e) => e.stopPropagation(),
+      receivingPendingEmpty: receivingPending.length === 0,
+      receivingScannedEmpty: scannedCount === 0,
+      receivingProgress: scannedCount + ' из ' + total,
+      receivingNotDone: receivingPending.length > 0,
+      receivingStatusColor: (activeBd && activeBd.done) ? 'var(--color-accent-700)' : (scannedCount > 0 ? 'var(--color-accent-2-700)' : 'var(--color-neutral-800)'),
+      receivingStatusBg: (activeBd && activeBd.done) ? 'transparent' : (scannedCount > 0 ? 'var(--color-accent-2-100)' : 'var(--color-neutral-200)'),
+      receivingStatusLabel: (activeBd && activeBd.done) ? 'Принят' : (scannedCount > 0 ? 'В работе' : 'Ожидает'),
+      receivingResponsible: (activeBd && activeBd.responsible) ? activeBd.responsible : '—',
+      completeReceiving: () => this.requestCompleteReceiving(),
+      scanInputValue: this.state.scanInput,
+      onScanInputChange: (e) => this.setState({ scanInput: e.target.value, scanError: false }),
+      onScanKeyDown: (e) => { if (e.key === 'Enter') this.scanBarcode(this.state.scanInput); },
+      scanError: this.state.scanError,
+      scanErrorText: this.state.scanErrorText,
+      scaleReading: this.state.lastWeight ? this.state.lastWeight + ' кг' : '—',
+      hasActiveBox: !!this.state.activeBox,
+      noActiveBox: !this.state.activeBox,
+      activeBoxName: this.state.activeBox ? this.state.activeBox.name : '',
+      activeBoxLabel: this.state.activeBox ? this.state.activeBox.boxLabel : '',
+      activeBoxExpectedWeight: this.state.activeBox ? this.state.activeBox.expectedWeight : '',
+      onCancelActive: () => this.cancelActive()
+    };
+  }
+}
+</script>
+</body>
+</html>

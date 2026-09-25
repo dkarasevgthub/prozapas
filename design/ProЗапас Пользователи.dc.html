@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/styles.css">
+  <script src="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/_ds_bundle.js"></script>
+  <style>
+    html{overflow-y:scroll}
+    body{margin:0;background:var(--color-bg);color:var(--color-text)}
+    a{color:var(--color-accent-700)}
+    a:hover{color:var(--color-accent)}
+    .table{font-size:16px}
+    .table th{font-size:13px;white-space:normal;line-height:1.3;padding:var(--space-1) var(--space-2);vertical-align:bottom;overflow-wrap:break-word;text-transform:none;letter-spacing:normal;font-weight:600}
+    .table td{padding:var(--space-2);line-height:1.25;overflow-wrap:break-word}
+    .breadcrumb{font-size:18px;color:var(--color-neutral-600);margin-bottom:var(--space-2)}
+    main h1{font-size:44px}
+    main h4{font-size:22px}
+    .clickable{cursor:pointer;transition:border-color .12s ease,background .12s ease}
+    tr.clickable:hover td{background:color-mix(in srgb, var(--color-text) 4%, transparent)}
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--space-3);padding:var(--space-8) var(--space-4);color:var(--color-neutral-600)}
+    .empty-state svg{color:var(--color-neutral-400)}
+    .no-scrollbar{scrollbar-width:none}
+    .no-scrollbar::-webkit-scrollbar{display:none}
+    .avatar{width:32px;height:32px;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:13px;color:var(--color-accent-700);flex:none}
+    .permcheck{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-neutral-700);cursor:pointer}
+    .permcheck input{width:15px;height:15px;accent-color:var(--color-accent)}
+  </style>
+</helmet>
+<div style="display:flex;min-height:100vh;width:100%;font-family:var(--font-body);overflow-x:hidden">
+  <dc-import name="Sidebar" active="users" hint-size="200px,100%"></dc-import>
+  <main style="flex:1;min-width:0;padding:var(--space-8) var(--space-8) var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)">
+
+    <div class="breadcrumb">ProЗапас / Пользователи</div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)">
+      <div>
+        <h1 style="margin-bottom:4px">Пользователи</h1>
+        <div style="font-size:14px;color:var(--color-neutral-600)">Сотрудники, их роли и права доступа</div>
+      </div>
+      <sc-if value="{{ isUsersTab }}" hint-placeholder-val="{{ true }}">
+        <button class="btn btn-primary" onClick="{{ onOpenAdd }}">+ Добавить пользователя</button>
+      </sc-if>
+    </div>
+
+    <div style="display:flex;gap:var(--space-2)">
+      <button class="{{ tabUsersCls }}" onClick="{{ onTabUsers }}">Пользователи</button>
+      <button class="{{ tabRolesCls }}" onClick="{{ onTabRoles }}">Роли и права</button>
+    </div>
+
+    <sc-if value="{{ isUsersTab }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:end;gap:var(--space-4);flex-wrap:wrap">
+      <div class="field" style="min-width:220px;margin:0">
+        <label>Поиск</label>
+        <input class="input" type="text" placeholder="ФИО, телефон или email" value="{{ searchValue }}" onChange="{{ onSearchChange }}">
+      </div>
+      <div class="field" style="min-width:160px;margin:0">
+        <label>Роль</label>
+        <select class="input" value="{{ roleFilterValue }}" onChange="{{ onRoleFilterChange }}">
+          <option value="all">Все роли</option>
+          <option value="manager">Менеджер</option>
+          <option value="stockman">Кладовщик</option>
+          <option value="admin">Администратор</option>
+        </select>
+      </div>
+      <div class="field" style="min-width:160px;margin:0">
+        <label>Статус</label>
+        <select class="input" value="{{ statusFilterValue }}" onChange="{{ onStatusFilterChange }}">
+          <option value="all">Все статусы</option>
+          <option value="active">Активен</option>
+          <option value="blocked">Заблокирован</option>
+        </select>
+      </div>
+      <div class="field" style="min-width:170px;margin:0">
+        <label>Склад</label>
+        <select class="input" value="{{ warehouseFilterValue }}" onChange="{{ onWarehouseFilterChange }}">
+          <option value="all">Все склады</option>
+          <sc-for list="{{ warehouseOptions }}" as="w" hint-placeholder-count="4">
+            <option value="{{ w }}">{{ w }}</option>
+          </sc-for>
+        </select>
+      </div>
+      <button class="btn btn-ghost" onClick="{{ onResetFilters }}">Сбросить</button>
+    </div>
+
+    <div class="blueprint no-scrollbar" id="users-scroll-wrap" style="padding:var(--space-4);overflow-x:auto">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <table class="table" style="table-layout:fixed;width:100%;min-width:880px;font-size:14px">
+        <thead><tr>
+          <th style="width:210px">Сотрудник</th><th style="width:105px">Роль</th><th style="width:160px">Должность</th><th style="width:130px">Склад</th><th style="width:135px">Телефон</th><th style="width:100px">Статус</th><th style="width:120px">Последний вход</th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ users }}" as="u" hint-placeholder-count="6">
+            <tr class="clickable" onClick="{{ u.onClick }}">
+              <td>
+                <div style="display:flex;align-items:center;gap:var(--space-3);min-width:0">
+                  <div class="avatar">{{ u.initials }}</div>
+                  <div style="min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.fullName }}</div><div style="font-size:12px;color:var(--color-neutral-600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.email }}</div></div>
+                </div>
+              </td>
+              <td><span class="tag" style="border:none;font-weight:700;color:{{ u.roleColor }};background:{{ u.roleBg }}">{{ u.roleLabel }}</span></td>
+              <td style="color:var(--color-neutral-600)">{{ u.position }}</td>
+              <td style="color:var(--color-neutral-600)">{{ u.warehouse }}</td>
+              <td style="color:var(--color-neutral-600);white-space:nowrap">{{ u.phone }}</td>
+              <td><span class="tag" style="border:none;font-weight:700;color:{{ u.statusColor }};background:{{ u.statusBg }}">{{ u.statusLabel }}</span></td>
+              <td style="color:var(--color-neutral-600);white-space:nowrap">{{ u.lastLogin }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <sc-if value="{{ usersEmpty }}" hint-placeholder-val="{{ false }}">
+        <div class="empty-state">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+          <div style="font-size:13px">Ничего не найдено по этим условиям</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ listShowPagination }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);margin-top:var(--space-4)">
+          <div style="font-size:13px;color:var(--color-neutral-600)">{{ listRangeText }}</div>
+          <div style="display:flex;align-items:center;gap:var(--space-2)">
+            <button class="btn btn-secondary btn-icon" disabled="{{ listPagePrevDisabled }}" onClick="{{ onListPagePrev }}">‹</button>
+            <sc-for list="{{ listPageNumbers }}" as="pn" hint-placeholder-count="3">
+              <button class="{{ pn.cls }}" onClick="{{ pn.onClick }}">{{ pn.n }}</button>
+            </sc-for>
+            <button class="btn btn-secondary btn-icon" disabled="{{ listPageNextDisabled }}" onClick="{{ onListPageNext }}">›</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isRolesTab }}" hint-placeholder-val="{{ false }}">
+    <div style="font-size:13px;color:var(--color-neutral-600)">Отметьте, что каждая роль может видеть и редактировать по разделам. Изменения сохраняются автоматически.</div>
+    <div class="blueprint no-scrollbar" style="padding:var(--space-4);overflow-x:auto">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <table class="table" style="table-layout:fixed;width:100%;min-width:720px;font-size:14px">
+        <thead><tr>
+          <th style="width:150px">Раздел</th>
+          <th style="width:190px">Менеджер</th><th style="width:190px">Кладовщик</th><th style="width:190px">Администратор</th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ permRows }}" as="row" hint-placeholder-count="6">
+            <tr>
+              <td style="font-weight:600">{{ row.section }}</td>
+              <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="3">
+                <td>
+                  <div style="display:flex;gap:var(--space-4)">
+                    <label class="permcheck"><input type="checkbox" checked="{{ c.view }}" onChange="{{ c.onToggleView }}">Просмотр</label>
+                    <label class="permcheck"><input type="checkbox" checked="{{ c.edit }}" onChange="{{ c.onToggleEdit }}">Ред.</label>
+                  </div>
+                </td>
+              </sc-for>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+    </sc-if>
+
+  </main>
+
+  <sc-if value="{{ isAddOpen }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" style="position:fixed" onClick="{{ onCloseAdd }}">
+    <div class="dialog" style="background:var(--color-surface);max-width:560px;width:92%" onClick="{{ stopClick }}">
+      <div class="dialog-title">Новый пользователь</div>
+      <div class="dialog-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+          <div class="field" style="grid-column:1/3;margin:0"><label>ФИО</label><input class="input" value="{{ form.fullName }}" onChange="{{ onFormFullName }}"></div>
+          <div class="field" style="margin:0"><label>Должность</label><input class="input" value="{{ form.position }}" onChange="{{ onFormPosition }}"></div>
+          <div class="field" style="margin:0"><label>Роль</label>
+            <select class="input" value="{{ form.role }}" onChange="{{ onFormRole }}">
+              <option value="manager">Менеджер</option><option value="stockman">Кладовщик</option><option value="admin">Администратор</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0"><label>Склад</label>
+            <select class="input" value="{{ form.warehouse }}" onChange="{{ onFormWarehouse }}">
+              <sc-for list="{{ warehouseOptions }}" as="w" hint-placeholder-count="4"><option value="{{ w }}">{{ w }}</option></sc-for>
+            </select>
+          </div>
+          <div class="field" style="margin:0"><label>Статус</label>
+            <select class="input" value="{{ form.status }}" onChange="{{ onFormStatus }}">
+              <option value="active">Активен</option><option value="blocked">Заблокирован</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0"><label>Телефон</label><input class="input" value="{{ form.phone }}" onChange="{{ onFormPhone }}"></div>
+          <div class="field" style="margin:0"><label>Email</label><input class="input" value="{{ form.email }}" onChange="{{ onFormEmail }}"></div>
+        </div>
+        <sc-if value="{{ formError }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12px;color:#b3261e;margin-top:var(--space-2)">Укажите как минимум ФИО.</div>
+        </sc-if>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn btn-secondary" onClick="{{ onCloseAdd }}">Отмена</button>
+        <button class="btn btn-primary" onClick="{{ onSaveAdd }}">Добавить</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const USERS_KEY = 'prozapas_users_v1';
+const PERMS_KEY = 'prozapas_role_perms_v1';
+const WAREHOUSES = ['Склад №1', 'Склад №3', 'Склад №4', 'Центральный склад'];
+const ROLE_META = {
+  manager: { label: 'Менеджер', color: 'var(--color-accent-2-700)', bg: 'var(--color-accent-2-100)' },
+  stockman: { label: 'Кладовщик', color: 'var(--color-accent-800)', bg: 'var(--color-accent-100)' },
+  admin: { label: 'Администратор', color: 'var(--color-neutral-800)', bg: 'var(--color-neutral-200)' }
+};
+const SECTIONS = [
+  { id: 'orders', label: 'Заказы' },
+  { id: 'shipping', label: 'Отгрузка' },
+  { id: 'receiving', label: 'Приёмка' },
+  { id: 'catalog', label: 'Справочник' },
+  { id: 'stock', label: 'Остатки' },
+  { id: 'users', label: 'Пользователи' }
+];
+const ROLE_ORDER = ['manager', 'stockman', 'admin'];
+
+function defaultPerms() {
+  const p = { manager: {}, stockman: {}, admin: {} };
+  SECTIONS.forEach(s => {
+    p.admin[s.id] = { view: true, edit: true };
+    p.manager[s.id] = { view: true, edit: false };
+    p.stockman[s.id] = { view: true, edit: false };
+  });
+  p.manager.orders = { view: true, edit: true };
+  p.manager.catalog = { view: true, edit: true };
+  p.manager.users = { view: false, edit: false };
+  p.stockman.shipping = { view: true, edit: true };
+  p.stockman.receiving = { view: true, edit: true };
+  p.stockman.stock = { view: true, edit: true };
+  p.stockman.users = { view: false, edit: false };
+  return p;
+}
+function loadPerms() {
+  try { const r = localStorage.getItem(PERMS_KEY); if (r) return JSON.parse(r); } catch (e) {}
+  const d = defaultPerms(); localStorage.setItem(PERMS_KEY, JSON.stringify(d)); return d;
+}
+function savePerms(p) { localStorage.setItem(PERMS_KEY, JSON.stringify(p)); }
+
+function seedUsers() {
+  const raw = [
+    ['Кузнецов Игорь Александрович', 'admin', 'Центральный склад', 'Начальник склада', 'active', '+7 916 204-11-87', 'i.kuznetsov@stalker.ru', '12.03.2019', '24.07.2026 08:42'],
+    ['Соколов Пётр Николаевич', 'stockman', 'Склад №1', 'Кладовщик', 'active', '+7 903 551-22-14', 'p.sokolov@stalker.ru', '05.06.2020', '24.07.2026 07:58'],
+    ['Морозова Елена Викторовна', 'manager', 'Склад №3', 'Менеджер по логистике', 'active', '+7 925 118-77-03', 'e.morozova@stalker.ru', '18.09.2021', '23.07.2026 17:20'],
+    ['Титов Роман Андреевич', 'stockman', 'Склад №4', 'Кладовщик', 'active', '+7 909 330-45-61', 'r.titov@stalker.ru', '02.02.2022', '24.07.2026 09:05'],
+    ['Волкова Мария Сергеевна', 'manager', 'Центральный склад', 'Менеджер по закупкам', 'active', '+7 917 442-90-08', 'm.volkova@stalker.ru', '27.11.2020', '24.07.2026 08:15'],
+    ['Новиков Дмитрий Олегович', 'stockman', 'Склад №1', 'Комплектовщик', 'active', '+7 985 220-14-30', 'd.novikov@stalker.ru', '14.04.2023', '23.07.2026 16:40'],
+    ['Козлова Анна Павловна', 'manager', 'Склад №3', 'Менеджер заказов', 'active', '+7 926 771-08-52', 'a.kozlova@stalker.ru', '09.07.2021', '24.07.2026 08:33'],
+    ['Лебедев Сергей Иванович', 'stockman', 'Склад №4', 'Кладовщик', 'blocked', '+7 903 118-64-27', 's.lebedev@stalker.ru', '21.10.2019', '11.05.2026 14:02'],
+    ['Егорова Ольга Дмитриевна', 'manager', 'Склад №1', 'Менеджер по логистике', 'active', '+7 916 905-33-71', 'o.egorova@stalker.ru', '30.01.2022', '24.07.2026 09:12'],
+    ['Павлов Артём Викторович', 'admin', 'Склад №3', 'Администратор системы', 'active', '+7 925 604-77-19', 'a.pavlov@stalker.ru', '15.08.2018', '24.07.2026 08:01'],
+    ['Семёнов Никита Андреевич', 'stockman', 'Центральный склад', 'Приёмщик', 'active', '+7 909 442-11-06', 'n.semenov@stalker.ru', '03.03.2024', '23.07.2026 18:47'],
+    ['Фёдорова Татьяна Юрьевна', 'manager', 'Склад №4', 'Менеджер по закупкам', 'active', '+7 917 330-88-52', 't.fedorova@stalker.ru', '22.05.2021', '24.07.2026 07:44'],
+    ['Михайлов Владимир Петрович', 'stockman', 'Склад №1', 'Кладовщик', 'active', '+7 985 771-20-63', 'v.mihaylov@stalker.ru', '19.12.2020', '24.07.2026 08:50'],
+    ['Виноградова Ирина Олеговна', 'manager', 'Склад №3', 'Менеджер заказов', 'active', '+7 926 118-45-90', 'i.vinogradova@stalker.ru', '07.06.2023', '23.07.2026 15:33'],
+    ['Богданов Алексей Сергеевич', 'stockman', 'Склад №4', 'Комплектовщик', 'blocked', '+7 903 905-14-08', 'a.bogdanov@stalker.ru', '11.09.2019', '02.03.2026 10:21'],
+    ['Орлова Наталья Игоревна', 'manager', 'Центральный склад', 'Менеджер по логистике', 'active', '+7 916 442-77-31', 'n.orlova@stalker.ru', '26.02.2022', '24.07.2026 09:00'],
+    ['Киселёв Максим Дмитриевич', 'stockman', 'Склад №1', 'Приёмщик', 'active', '+7 925 220-63-14', 'm.kiselev@stalker.ru', '13.11.2023', '24.07.2026 08:22'],
+    ['Макарова Светлана Андреевна', 'admin', 'Центральный склад', 'Администратор', 'active', '+7 917 604-11-90', 's.makarova@stalker.ru', '04.04.2019', '24.07.2026 08:37'],
+    ['Никитин Павел Романович', 'stockman', 'Склад №3', 'Кладовщик', 'active', '+7 909 771-33-27', 'p.nikitin@stalker.ru', '28.07.2022', '23.07.2026 17:05'],
+    ['Захарова Юлия Владимировна', 'manager', 'Склад №4', 'Менеджер по закупкам', 'active', '+7 985 330-45-08', 'y.zaharova@stalker.ru', '16.01.2024', '24.07.2026 08:19']
+  ];
+  return raw.map((r, i) => ({
+    id: i + 1, fullName: r[0], role: r[1], warehouse: r[2], position: r[3],
+    status: r[4], phone: r[5], email: r[6], hireDate: r[7], lastLogin: r[8]
+  }));
+}
+function loadUsers() {
+  try { const r = localStorage.getItem(USERS_KEY); if (r) return JSON.parse(r); } catch (e) {}
+  const s = seedUsers(); localStorage.setItem(USERS_KEY, JSON.stringify(s)); return s;
+}
+function saveUsers(list) { localStorage.setItem(USERS_KEY, JSON.stringify(list)); }
+function initials(fio) {
+  const parts = fio.trim().split(/\s+/);
+  return ((parts[0] || '')[0] || '') + ((parts[1] || '')[0] || '');
+}
+
+class Component extends DCLogic {
+  state = {
+    tab: 'users',
+    search: '', roleFilter: 'all', statusFilter: 'all', warehouseFilter: 'all',
+    listPage: 1, pageSize: 20,
+    perms: null,
+    isAddOpen: false, formError: false,
+    form: { fullName: '', position: '', role: 'manager', warehouse: 'Склад №1', status: 'active', phone: '', email: '' }
+  };
+
+  ROW_HEIGHT = 49;
+  RESERVED_HEIGHT = 430;
+  computePageSize() { return Math.max(5, Math.floor((window.innerHeight - this.RESERVED_HEIGHT) / this.ROW_HEIGHT)); }
+  componentDidMount() {
+    this.setState({ pageSize: this.computePageSize(), perms: loadPerms() });
+    this._onResize = () => this.setState({ pageSize: this.computePageSize() });
+    window.addEventListener('resize', this._onResize);
+    const wrap = document.getElementById('users-scroll-wrap');
+    if (wrap) {
+      this._onWheel = (e) => { if (e.deltaX === 0 && e.deltaY !== 0) { e.preventDefault(); window.scrollBy(0, e.deltaY); } };
+      wrap.addEventListener('wheel', this._onWheel, { passive: false });
+    }
+  }
+  componentWillUnmount() {
+    if (this._onResize) window.removeEventListener('resize', this._onResize);
+    const wrap = document.getElementById('users-scroll-wrap');
+    if (wrap && this._onWheel) wrap.removeEventListener('wheel', this._onWheel);
+  }
+
+  setFilter(patch) { this.setState({ ...patch, listPage: 1 }); }
+  resetFilters() { this.setState({ search: '', roleFilter: 'all', statusFilter: 'all', warehouseFilter: 'all', listPage: 1 }); }
+  goToListPage(n) { this.setState({ listPage: n }); }
+
+  openAdd() { this.setState({ isAddOpen: true, formError: false, form: { fullName: '', position: '', role: 'manager', warehouse: 'Склад №1', status: 'active', phone: '', email: '' } }); }
+  closeAdd() { this.setState({ isAddOpen: false }); }
+  setForm(patch) { this.setState(st => ({ form: { ...st.form, ...patch }, formError: false })); }
+  saveAdd() {
+    const f = this.state.form;
+    if (!f.fullName.trim()) { this.setState({ formError: true }); return; }
+    const users = loadUsers();
+    const nextId = users.reduce((m, u) => Math.max(m, u.id), 0) + 1;
+    const today = new Date().toLocaleDateString('ru-RU');
+    users.push({ id: nextId, fullName: f.fullName.trim(), role: f.role, warehouse: f.warehouse, position: f.position.trim(), status: f.status, phone: f.phone.trim(), email: f.email.trim(), hireDate: today, lastLogin: '—' });
+    saveUsers(users);
+    this.setState({ isAddOpen: false });
+  }
+
+  togglePerm(role, section, kind) {
+    this.setState(st => {
+      const perms = JSON.parse(JSON.stringify(st.perms));
+      const cell = perms[role][section];
+      cell[kind] = !cell[kind];
+      if (kind === 'edit' && cell.edit) cell.view = true;
+      if (kind === 'view' && !cell.view) cell.edit = false;
+      savePerms(perms);
+      return { perms };
+    });
+  }
+
+  renderVals() {
+    const { search, roleFilter, statusFilter, warehouseFilter, tab } = this.state;
+    const searchLc = search.trim().toLowerCase();
+    const statusMeta = {
+      active: { label: 'Активен', color: 'var(--color-accent-2-700)', bg: 'var(--color-accent-2-100)' },
+      blocked: { label: 'Заблокирован', color: '#b3261e', bg: 'var(--color-neutral-100)' }
+    };
+
+    const allUsers = loadUsers().filter(u => {
+      if (searchLc && !(u.fullName.toLowerCase().includes(searchLc) || u.email.toLowerCase().includes(searchLc) || u.phone.toLowerCase().includes(searchLc))) return false;
+      if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+      if (statusFilter !== 'all' && u.status !== statusFilter) return false;
+      if (warehouseFilter !== 'all' && u.warehouse !== warehouseFilter) return false;
+      return true;
+    }).map(u => ({
+      initials: initials(u.fullName),
+      fullName: u.fullName, email: u.email, position: u.position, warehouse: u.warehouse, phone: u.phone,
+      roleLabel: ROLE_META[u.role].label, roleColor: ROLE_META[u.role].color, roleBg: ROLE_META[u.role].bg,
+      statusLabel: statusMeta[u.status].label, statusColor: statusMeta[u.status].color, statusBg: statusMeta[u.status].bg,
+      lastLogin: u.lastLogin,
+      onClick: () => { window.location.href = 'ProЗапас Пользователь.dc.html?id=' + u.id; }
+    }));
+
+    const pageSize = this.state.pageSize;
+    const listTotalPages = Math.max(1, Math.ceil(allUsers.length / pageSize));
+    const listPage = Math.min(this.state.listPage, listTotalPages);
+    const users = allUsers.slice((listPage - 1) * pageSize, listPage * pageSize);
+    const listPageNumbers = Array.from({ length: listTotalPages }, (_, i) => ({
+      n: i + 1, cls: 'btn btn-icon ' + (i + 1 === listPage ? 'btn-primary' : 'btn-secondary'),
+      onClick: () => this.goToListPage(i + 1)
+    }));
+
+    const perms = this.state.perms || defaultPerms();
+    const permRows = SECTIONS.map(s => ({
+      section: s.label,
+      cells: ROLE_ORDER.map(role => ({
+        view: perms[role][s.id].view,
+        edit: perms[role][s.id].edit,
+        onToggleView: () => this.togglePerm(role, s.id, 'view'),
+        onToggleEdit: () => this.togglePerm(role, s.id, 'edit')
+      }))
+    }));
+
+    const f = this.state.form;
+    return {
+      isUsersTab: tab === 'users', isRolesTab: tab === 'roles',
+      tabUsersCls: 'btn ' + (tab === 'users' ? 'btn-primary' : 'btn-secondary'),
+      tabRolesCls: 'btn ' + (tab === 'roles' ? 'btn-primary' : 'btn-secondary'),
+      onTabUsers: () => this.setState({ tab: 'users' }),
+      onTabRoles: () => this.setState({ tab: 'roles' }),
+      warehouseOptions: WAREHOUSES,
+      users, usersEmpty: users.length === 0,
+      searchValue: search, onSearchChange: (e) => this.setFilter({ search: e.target.value }),
+      roleFilterValue: roleFilter, onRoleFilterChange: (e) => this.setFilter({ roleFilter: e.target.value }),
+      statusFilterValue: statusFilter, onStatusFilterChange: (e) => this.setFilter({ statusFilter: e.target.value }),
+      warehouseFilterValue: warehouseFilter, onWarehouseFilterChange: (e) => this.setFilter({ warehouseFilter: e.target.value }),
+      onResetFilters: () => this.resetFilters(),
+      listPageNumbers, listShowPagination: listTotalPages > 1,
+      listPagePrevDisabled: listPage <= 1, listPageNextDisabled: listPage >= listTotalPages,
+      onListPagePrev: () => this.goToListPage(listPage - 1), onListPageNext: () => this.goToListPage(listPage + 1),
+      listRangeText: allUsers.length === 0 ? '' : ((listPage - 1) * pageSize + 1) + '–' + Math.min(listPage * pageSize, allUsers.length) + ' из ' + allUsers.length,
+      permRows,
+      isAddOpen: this.state.isAddOpen, formError: this.state.formError,
+      onOpenAdd: () => this.openAdd(), onCloseAdd: () => this.closeAdd(),
+      onSaveAdd: () => this.saveAdd(), stopClick: (e) => e.stopPropagation(),
+      form: f,
+      onFormFullName: (e) => this.setForm({ fullName: e.target.value }),
+      onFormPosition: (e) => this.setForm({ position: e.target.value }),
+      onFormRole: (e) => this.setForm({ role: e.target.value }),
+      onFormWarehouse: (e) => this.setForm({ warehouse: e.target.value }),
+      onFormStatus: (e) => this.setForm({ status: e.target.value }),
+      onFormPhone: (e) => this.setForm({ phone: e.target.value }),
+      onFormEmail: (e) => this.setForm({ email: e.target.value })
+    };
+  }
+}
+</script>
+</body>
+</html>

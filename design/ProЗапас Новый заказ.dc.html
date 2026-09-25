@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/styles.css">
+  <script src="_ds/industry-ee649fec-c96f-463f-a935-a7e5fb9514f5/_ds_bundle.js"></script>
+  <style>
+    html{overflow-y:scroll}
+    body{margin:0;background:var(--color-bg);color:var(--color-text)}
+    a{color:var(--color-accent-700)}
+    a:hover{color:var(--color-accent)}
+    .breadcrumb{font-size:18px;color:var(--color-neutral-600);margin-bottom:var(--space-2)}
+    .breadcrumb a{color:var(--color-neutral-600);text-decoration:none;cursor:pointer}
+    .breadcrumb a:hover{color:var(--color-accent-700)}
+    main h1{font-size:44px}
+    .table{font-size:16px}
+    .table th{font-size:13px;white-space:normal;line-height:1.3;padding:var(--space-1) var(--space-2);vertical-align:bottom;overflow-wrap:break-word;text-transform:none;letter-spacing:normal;font-weight:600}
+    .table td{padding:3px var(--space-2);line-height:1.15;overflow-wrap:break-word}
+    tr.selected-row td{background:var(--color-accent-100)}
+    tr.sub-row td{background:color-mix(in srgb, var(--color-text) 3%, transparent)}
+    .expand-toggle{cursor:pointer;color:var(--color-accent-700);background:none;border:none;font-size:13px;padding:2px 0;text-align:left}
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--space-3);padding:var(--space-6) var(--space-4);color:var(--color-neutral-600)}
+    .no-scrollbar{scrollbar-width:none}
+    .no-scrollbar::-webkit-scrollbar{display:none}
+  </style>
+</helmet>
+<div style="display:flex;min-height:100vh;width:100%;font-family:var(--font-body);overflow-x:hidden">
+  <dc-import name="Sidebar" active="orders" hint-size="200px,100%"></dc-import>
+  <main style="flex:1;min-width:0;padding:var(--space-8) var(--space-8) var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)">
+
+    <div class="breadcrumb"><a href="ProЗапас Главная.dc.html">ProЗапас</a> / <a href="ProЗапас Заказы.dc.html">Заказы</a> / Новый заказ</div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4)">
+      <div>
+        <h1 style="margin-bottom:4px">Новый заказ</h1>
+        <div style="font-size:14px;color:var(--color-neutral-600)">Запрос на перемещение товара с другого склада к нам</div>
+      </div>
+      <div style="display:flex;gap:var(--space-3)">
+        <a href="ProЗапас Заказы.dc.html" class="btn btn-secondary">Отмена</a>
+        <button class="btn btn-primary" disabled="{{ submitDisabled }}" onClick="{{ onSubmit }}">Отправить заказ</button>
+      </div>
+    </div>
+
+    <div class="blueprint" style="padding:var(--space-4);display:flex;gap:var(--space-6);flex-wrap:wrap">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div class="field" style="min-width:220px;margin:0">
+        <label>Склад-отправитель</label>
+        <select class="input" value="{{ warehouseValue }}" onChange="{{ onWarehouseChange }}">
+          <option value="all">Все склады — найти где есть</option>
+          <sc-for list="{{ warehouseOptions }}" as="w" hint-placeholder-count="4">
+            <option value="{{ w }}">{{ w }}</option>
+          </sc-for>
+        </select>
+      </div>
+      <div class="field" style="flex:1;min-width:220px;margin:0">
+        <label>Поиск по артикулу или наименованию</label>
+        <input class="input" type="text" value="{{ searchValue }}" onChange="{{ onSearchChange }}">
+      </div>
+      <div class="field" style="flex:2;min-width:260px;margin:0">
+        <label>Комментарий к заказу (опционально)</label>
+        <input class="input" type="text" value="{{ commentValue }}" onChange="{{ onCommentChange }}">
+      </div>
+    </div>
+
+    <sc-if value="{{ warehouseLockedNotice }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:12px;color:var(--color-neutral-600)">Склад определён по первой добавленной позиции. Смена склада очистит выбранные позиции.</div>
+    </sc-if>
+
+    <div class="blueprint no-scrollbar" id="catalog-scroll-wrap" style="padding:var(--space-4);overflow-x:auto">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <table class="table" style="table-layout:fixed;width:100%;min-width:870px;font-size:14px">
+        <thead><tr>
+          <th style="width:65px">Артикул</th><th style="width:90px">Артикул 1С</th><th style="width:210px">Наименование</th><th style="width:65px">Ед. изм.</th>
+          <sc-if value="{{ showWarehouseCol }}" hint-placeholder-val="{{ true }}"><th style="width:160px">Склад</th></sc-if>
+          <th style="width:78px">Доступно</th><th style="width:150px"></th><th style="width:45px;text-align:right;padding-right:0"></th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+            <tr class="{{ r.rowClass }}">
+              <td style="color:var(--color-neutral-600)">{{ r.article }}</td>
+              <td style="color:var(--color-neutral-600)">{{ r.code1c }}</td>
+              <td>{{ r.name }}</td>
+              <td style="color:var(--color-neutral-600)">{{ r.unit }}</td>
+              <sc-if value="{{ showWarehouseCol }}" hint-placeholder-val="{{ true }}">
+                <td>
+                  <sc-if value="{{ r.hasMultipleWarehouses }}" hint-placeholder-val="{{ false }}">
+                    <button class="expand-toggle" onClick="{{ r.onToggleExpand }}">{{ r.warehouse }} ({{ r.otherCount }}) {{ r.expandArrow }}</button>
+                  </sc-if>
+                  <sc-if value="{{ r.hasMultipleWarehouses }}" hint-placeholder-val="{{ false }}"></sc-if>
+                  <sc-if value="{{ r.showWarehouseText }}" hint-placeholder-val="{{ true }}">
+                    <span style="color:var(--color-neutral-600)">{{ r.warehouse }}</span>
+                  </sc-if>
+                </td>
+              </sc-if>
+              <td style="color:var(--color-neutral-600)">{{ r.availableText }}</td>
+              <td>
+                <sc-if value="{{ r.isSelected }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;gap:6px;align-items:center">
+                    <input class="input" type="number" min="1" max="{{ r.available }}" value="{{ r.qty }}" onChange="{{ r.onQtyChange }}" style="padding:2px 6px;width:70px;box-sizing:border-box">
+                    <button class="btn btn-ghost btn-icon" onClick="{{ r.onRemove }}">✕</button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ r.isEnteringQty }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;gap:6px;align-items:center">
+                    <input class="input" type="number" min="1" max="{{ r.available }}" value="{{ r.draftQty }}" onChange="{{ r.onDraftQtyChange }}" style="padding:2px 6px;width:70px;box-sizing:border-box" autofocus="{{ true }}">
+                    <button class="btn btn-secondary" onClick="{{ r.onConfirmAdd }}" style="white-space:nowrap;padding:6px 10px">Добавить</button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ r.showAddButton }}" hint-placeholder-val="{{ true }}">
+                  <button class="btn btn-secondary" onClick="{{ r.onStartAdd }}" style="white-space:nowrap;padding:6px 10px">Добавить</button>
+                </sc-if>
+              </td>
+              <td style="text-align:right;padding-right:0">
+                <sc-if value="{{ r.showProductLink }}" hint-placeholder-val="{{ true }}">
+                  <a class="btn btn-ghost btn-icon" href="{{ r.productHref }}" title="Карточка товара" style="display:inline-flex;align-items:center;justify-content:center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                  </a>
+                </sc-if>
+              </td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <sc-if value="{{ rowsEmpty }}" hint-placeholder-val="{{ false }}">
+        <div class="empty-state">
+          <div style="font-size:13px">Ничего не найдено — попробуйте другой склад или запрос</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ listShowPagination }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);margin-top:var(--space-4)">
+          <div style="font-size:13px;color:var(--color-neutral-600)">{{ listRangeText }}</div>
+          <div style="display:flex;align-items:center;gap:var(--space-2)">
+            <button class="btn btn-secondary btn-icon" disabled="{{ listPagePrevDisabled }}" onClick="{{ onListPagePrev }}">‹</button>
+            <sc-for list="{{ listPageNumbers }}" as="pn" hint-placeholder-count="3">
+              <button class="{{ pn.cls }}" onClick="{{ pn.onClick }}">{{ pn.n }}</button>
+            </sc-for>
+            <button class="btn btn-secondary btn-icon" disabled="{{ listPageNextDisabled }}" onClick="{{ onListPageNext }}">›</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const STORAGE_KEY = 'prozapas_orders_v4';
+const CURRENT_USER = 'Кузнецов И.А.';
+const WAREHOUSES = ['Склад №1', 'Склад №3', 'Склад №4', 'Центральный склад'];
+const CATALOG_ITEMS = [
+  { article: '100421', code1c: 'ТМЦ-00421', name: 'Болт М8×40 ГОСТ 7798', unit: 'шт.' },
+  { article: '100433', code1c: 'ТМЦ-00433', name: 'Гайка М8 ГОСТ 5915', unit: 'шт.' },
+  { article: '201187', code1c: 'ТМЦ-01187', name: 'Подшипник 6205-2RS', unit: 'шт.' },
+  { article: '201204', code1c: 'ТМЦ-01204', name: 'Ремень приводной А-1250', unit: 'шт.' },
+  { article: '100458', code1c: 'ТМЦ-00458', name: 'Лист стальной 2×1250×2500', unit: 'лист' },
+  { article: '100477', code1c: 'ТМЦ-00477', name: 'Уголок стальной 50×50×5', unit: 'шт.' },
+  { article: '100512', code1c: 'ТМЦ-00512', name: 'Труба стальная 32×2', unit: 'м' },
+  { article: '300098', code1c: 'ТМЦ-00098', name: 'Электродвигатель АИР90', unit: 'шт.' },
+  { article: '201340', code1c: 'ТМЦ-01340', name: 'Ремень клиновой Б-1400', unit: 'шт.' },
+  { article: '100655', code1c: 'ТМЦ-00655', name: 'Шайба М8 ГОСТ 6402', unit: 'шт.' },
+  { article: '100701', code1c: 'ТМЦ-00701', name: 'Винт М6×20 ГОСТ 17475', unit: 'шт.' },
+  { article: '201412', code1c: 'ТМЦ-01412', name: 'Подшипник 6208-2RS', unit: 'шт.' },
+  { article: '300133', code1c: 'ТМЦ-00133', name: 'Насос шестерённый НШ-10', unit: 'шт.' },
+  { article: '100812', code1c: 'ТМЦ-00812', name: 'Швеллер 10П ГОСТ 8240', unit: 'м' },
+  { article: '300159', code1c: 'ТМЦ-00159', name: 'Редуктор червячный РЧУ-125', unit: 'шт.' },
+  { article: '100933', code1c: 'ТМЦ-00933', name: 'Гайка М10 ГОСТ 5915', unit: 'шт.' },
+  { article: '201055', code1c: 'ТМЦ-01055', name: 'Муфта соединительная МУВП-40', unit: 'шт.' },
+  { article: '100950', code1c: 'ТМЦ-00950', name: 'Шпонка 8×7×40', unit: 'шт.' },
+  { article: '201600', code1c: 'ТМЦ-01600', name: 'Цепь приводная ПР-19.05', unit: 'м' },
+  { article: '300210', code1c: 'ТМЦ-00210', name: 'Компрессор поршневой К-25', unit: 'шт.' }
+];
+const COUNTERPARTY_RESPONSIBLE = {
+  'Склад №1': 'Соколов П.Н.', 'Склад №3': 'Морозова Е.В.', 'Склад №4': 'Титов Р.А.', 'Центральный склад': 'Волкова М.С.'
+};
+// mock per-warehouse stock (0 means not available there)
+const WAREHOUSE_STOCK = {
+  'Склад №1': { '100421': 800, '100433': 0, '201187': 12, '201204': 0, '100458': 0, '100477': 40, '100512': 0, '300098': 3,
+    '201340': 54, '100655': 0, '100701': 900, '201412': 0, '300133': 4, '100812': 0, '300159': 2, '100933': 0, '201055': 6, '100950': 0, '201600': 0, '300210': 1 },
+  'Склад №3': { '100421': 0, '100433': 600, '201187': 0, '201204': 25, '100458': 6, '100477': 0, '100512': 120, '300098': 0,
+    '201340': 0, '100655': 3200, '100701': 0, '201412': 18, '300133': 0, '100812': 40, '300159': 0, '100933': 1500, '201055': 0, '100950': 220, '201600': 30, '300210': 0 },
+  'Склад №4': { '100421': 150, '100433': 0, '201187': 30, '201204': 8, '100458': 0, '100477': 0, '100512': 0, '300098': 2,
+    '201340': 12, '100655': 0, '100701': 400, '201412': 10, '300133': 3, '100812': 0, '300159': 1, '100933': 0, '201055': 4, '100950': 0, '201600': 20, '300210': 0 },
+  'Центральный склад': { '100421': 0, '100433': 0, '201187': 0, '201204': 0, '100458': 10, '100477': 60, '100512': 200, '300098': 6,
+    '201340': 0, '100655': 1800, '100701': 0, '201412': 0, '300133': 5, '100812': 60, '300159': 3, '100933': 900, '201055': 8, '100950': 150, '201600': 0, '300210': 2 }
+};
+
+function catalogItem(article) { return CATALOG_ITEMS.find(c => c.article === article); }
+function formatNow() {
+  const d = new Date();
+  return d.toLocaleDateString('ru-RU') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function loadOrders() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [];
+}
+function saveOrders(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+class Component extends DCLogic {
+  state = { warehouse: 'all', search: '', comment: '', selections: {}, expandedArticles: {}, activeQtyRow: null, qtyDrafts: {}, listPage: 1, pageSize: 20 };
+
+  toggleExpand(article) {
+    this.setState(st => ({ expandedArticles: { ...st.expandedArticles, [article]: !st.expandedArticles[article] } }));
+  }
+
+  startAdd(rowKey) {
+    this.setState(st => ({ activeQtyRow: rowKey, qtyDrafts: { ...st.qtyDrafts, [rowKey]: st.qtyDrafts[rowKey] || '1' } }));
+  }
+  updateDraftQty(rowKey, val) {
+    this.setState(st => ({ qtyDrafts: { ...st.qtyDrafts, [rowKey]: val } }));
+  }
+  confirmAdd(rowKey, article, warehouse) {
+    const qty = this.state.qtyDrafts[rowKey] || '1';
+    this.addItem(article, warehouse, qty);
+    this.setState({ activeQtyRow: null });
+  }
+
+  ROW_HEIGHT = 41;
+  RESERVED_HEIGHT = 420;
+  computePageSize() { return Math.max(5, Math.floor((window.innerHeight - this.RESERVED_HEIGHT) / this.ROW_HEIGHT)); }
+  componentDidMount() {
+    this.setState({ pageSize: this.computePageSize() });
+    this._onResize = () => this.setState({ pageSize: this.computePageSize() });
+    window.addEventListener('resize', this._onResize);
+    const wrap = document.getElementById('catalog-scroll-wrap');
+    if (wrap) {
+      this._onWheel = (e) => {
+        if (e.deltaX === 0 && e.deltaY !== 0) {
+          e.preventDefault();
+          window.scrollBy(0, e.deltaY);
+        }
+      };
+      wrap.addEventListener('wheel', this._onWheel, { passive: false });
+    }
+  }
+  componentWillUnmount() {
+    if (this._onResize) window.removeEventListener('resize', this._onResize);
+    const wrap = document.getElementById('catalog-scroll-wrap');
+    if (wrap && this._onWheel) wrap.removeEventListener('wheel', this._onWheel);
+  }
+  goToListPage(n) { this.setState({ listPage: n }); }
+
+  onWarehouseChange(v) {
+    if (Object.keys(this.state.selections).length > 0 && v !== this.state.warehouse) {
+      this.setState({ warehouse: v, selections: {}, listPage: 1 });
+    } else {
+      this.setState({ warehouse: v, listPage: 1 });
+    }
+  }
+
+  addItem(article, warehouse, qty) {
+    this.setState(st => ({
+      warehouse: warehouse,
+      selections: { ...st.selections, [article]: { article, warehouse, qty } }
+    }));
+  }
+  removeItem(key) {
+    this.setState(st => {
+      const sel = { ...st.selections };
+      delete sel[key];
+      const stillHasAny = Object.keys(sel).length > 0;
+      return { selections: sel, warehouse: stillHasAny ? st.warehouse : 'all' };
+    });
+  }
+  updateQty(key, qty) {
+    this.setState(st => ({ selections: { ...st.selections, [key]: { ...st.selections[key], qty } } }));
+  }
+
+  submit() {
+    const selKeys = Object.keys(this.state.selections);
+    if (selKeys.length === 0) return;
+    const warehouse = this.state.selections[selKeys[0]].warehouse;
+    const orders = loadOrders();
+    const nextId = orders.length ? Math.max(...orders.map(o => o.id)) + 1 : 1;
+    const nextNumber = String(2000 + orders.filter(o => o.direction === 'ours').length + 1);
+    const createdStr = formatNow();
+    const positions = selKeys.map(k => {
+      const s = this.state.selections[k];
+      const c = catalogItem(s.article);
+      return { article: s.article, name: c.name, unit: c.unit, qty: parseFloat(s.qty) || 1 };
+    });
+    const newOrder = {
+      id: nextId, number: nextNumber, direction: 'ours', status: 'created', counterpartyWarehouse: warehouse,
+      counterpartyResponsible: COUNTERPARTY_RESPONSIBLE[warehouse] || '—',
+      createdDateTime: createdStr, shipDateTime: '—', acceptedAt: null, responsible: CURRENT_USER,
+      comment: this.state.comment.trim(), positions,
+      history: [{ status: 'created', dateTime: createdStr }]
+    };
+    orders.push(newOrder);
+    saveOrders(orders);
+    window.location.href = 'ProЗапас Заказ.dc.html?id=' + nextId;
+  }
+
+  renderVals() {
+    const { warehouse, search, comment, selections, expandedArticles, activeQtyRow, qtyDrafts } = this.state;
+    const searchLc = search.trim().toLowerCase();
+    const showWarehouseCol = warehouse === 'all';
+    const warehousesToScan = warehouse === 'all' ? WAREHOUSES : [warehouse];
+
+    // group by article: one entry per article with all warehouses that have stock
+    const byArticle = {};
+    CATALOG_ITEMS.forEach(c => {
+      const stockEntries = warehousesToScan
+        .map(w => ({ warehouse: w, available: (WAREHOUSE_STOCK[w] || {})[c.article] || 0 }))
+        .filter(e => e.available > 0)
+        .sort((a, b) => b.available - a.available);
+      if (stockEntries.length > 0) byArticle[c.article] = { article: c.article, code1c: c.code1c, name: c.name, unit: c.unit, stockEntries };
+    });
+
+    let candidates = Object.values(byArticle);
+    if (searchLc) {
+      candidates = candidates.filter(c => c.name.toLowerCase().includes(searchLc) || c.article.toLowerCase().includes(searchLc));
+    }
+
+    const selKeys = Object.keys(selections);
+    const selectedRows = selKeys.map(k => {
+      const s = selections[k];
+      const c = catalogItem(s.article);
+      const avail = (WAREHOUSE_STOCK[s.warehouse] || {})[s.article] || 0;
+      return {
+        article: s.article, code1c: c.code1c, name: c.name, unit: c.unit, warehouse: s.warehouse, available: avail, availableText: String(avail),
+        showWarehouseText: true, hasMultipleWarehouses: false, showQty: true, showProductLink: true,
+        qty: s.qty, isSelected: true, canAdd: false, rowClass: 'selected-row',
+        productHref: 'ProЗапас Товар.dc.html?article=' + s.article + '&from=catalog',
+        onQtyChange: (e) => this.updateQty(k, e.target.value),
+        onRemove: () => this.removeItem(k)
+      };
+    });
+
+    const remainingRows = [];
+    candidates
+      .filter(c => !selections[c.article])
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+      .forEach(c => {
+        const multi = c.stockEntries.length > 1;
+        const expanded = !!expandedArticles[c.article];
+        const best = c.stockEntries[0];
+        const others = c.stockEntries.slice(1);
+        const parentKey = c.article;
+        const parentEntering = activeQtyRow === parentKey;
+        remainingRows.push({
+          article: c.article, code1c: c.code1c, name: c.name, unit: c.unit, warehouse: best.warehouse, available: best.available, availableText: String(best.available),
+          showWarehouseText: !multi, hasMultipleWarehouses: multi, showProductLink: true,
+          otherCount: others.length, expandArrow: expanded ? '▾' : '▸', onToggleExpand: () => this.toggleExpand(c.article),
+          isSelected: false, isEnteringQty: parentEntering, showAddButton: !parentEntering, draftQty: qtyDrafts[parentKey] || '1', rowClass: '',
+          productHref: 'ProЗапас Товар.dc.html?article=' + c.article + '&from=catalog',
+          onDraftQtyChange: (e) => this.updateDraftQty(parentKey, e.target.value),
+          onStartAdd: () => this.startAdd(parentKey),
+          onConfirmAdd: () => this.confirmAdd(parentKey, c.article, best.warehouse)
+        });
+        if (multi && expanded) {
+          others.forEach(entry => {
+            const subKey = c.article + '::' + entry.warehouse;
+            const subEntering = activeQtyRow === subKey;
+            remainingRows.push({
+              article: '', code1c: '', name: '', unit: '', warehouse: entry.warehouse, available: entry.available, availableText: String(entry.available),
+              showWarehouseText: true, hasMultipleWarehouses: false, showProductLink: false,
+              isSelected: false, isEnteringQty: subEntering, showAddButton: !subEntering, draftQty: qtyDrafts[subKey] || '1', rowClass: 'sub-row',
+              onDraftQtyChange: (e) => this.updateDraftQty(subKey, e.target.value),
+              onStartAdd: () => this.startAdd(subKey),
+              onConfirmAdd: () => this.confirmAdd(subKey, c.article, entry.warehouse)
+            });
+          });
+        }
+      });
+
+    const pageSize = this.state.pageSize;
+    const listTotalPages = Math.max(1, Math.ceil(remainingRows.length / pageSize));
+    const listPage = Math.min(this.state.listPage, listTotalPages);
+    const pagedRemaining = remainingRows.slice((listPage - 1) * pageSize, listPage * pageSize);
+    const listPageNumbers = Array.from({ length: listTotalPages }, (_, i) => ({
+      n: i + 1, cls: 'btn btn-icon ' + (i + 1 === listPage ? 'btn-primary' : 'btn-secondary'),
+      onClick: () => this.goToListPage(i + 1)
+    }));
+
+    const rows = selectedRows.concat(pagedRemaining);
+
+    return {
+      listPageNumbers,
+      listShowPagination: listTotalPages > 1,
+      listPagePrevDisabled: listPage <= 1,
+      listPageNextDisabled: listPage >= listTotalPages,
+      onListPagePrev: () => this.goToListPage(listPage - 1),
+      onListPageNext: () => this.goToListPage(listPage + 1),
+      listRangeText: remainingRows.length === 0 ? '' : ((listPage - 1) * pageSize + 1) + '–' + Math.min(listPage * pageSize, remainingRows.length) + ' из ' + remainingRows.length + ' доступных',
+      warehouseOptions: WAREHOUSES,
+      warehouseValue: warehouse,
+      onWarehouseChange: (e) => this.onWarehouseChange(e.target.value),
+      warehouseLockedNotice: selKeys.length > 0,
+      searchValue: search,
+      onSearchChange: (e) => this.setState({ search: e.target.value }),
+      commentValue: comment,
+      onCommentChange: (e) => this.setState({ comment: e.target.value }),
+      showWarehouseCol,
+      rows,
+      rowsEmpty: rows.length === 0,
+      submitDisabled: selKeys.length === 0,
+      onSubmit: () => this.submit()
+    };
+  }
+}
+</script>
+</body>
+</html>
