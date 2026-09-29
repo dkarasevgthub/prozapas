@@ -45,11 +45,14 @@ def confirm_dialog(parent, title, body, confirm_label="Подтвердить", 
 
     actions = QHBoxLayout()
     actions.addStretch(1)
-    cancel = button(cancel_label, "secondary")
-    cancel.clicked.connect(dlg.reject)
+    # Пустая подпись — окно-сообщение, отменять в нём нечего. Раньше кнопка всё
+    # равно создавалась и висела пустым прямоугольником рядом с «Понятно».
+    if cancel_label:
+        cancel = button(cancel_label, "secondary")
+        cancel.clicked.connect(dlg.reject)
+        actions.addWidget(cancel)
     ok = button(confirm_label, "primary")
     ok.clicked.connect(dlg.accept)
-    actions.addWidget(cancel)
     actions.addWidget(ok)
     lay.addSpacing(theme.SP2)
     lay.addLayout(actions)

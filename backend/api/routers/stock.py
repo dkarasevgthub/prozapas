@@ -1,21 +1,22 @@
-"""Остатки — 5 операций, раздел 6.5 api.md.
+"""Остатки — 7 операций, разделы 6.5 и 6.8 api.md.
 
-Фиксированные пути (/summary, /operations) объявлены раньше /stock/{item_id} —
-иначе FastAPI разобрал бы «summary» как item_id и вернул 422.
+Фиксированные пути (/summary, /operations, /import, /export) объявлены раньше
+/stock/{item_id} — иначе FastAPI разобрал бы «summary» как item_id и вернул 422.
 """
 from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Body, Query, Response
 
 from database.models import Section, UserAccount
 
 from ..deps import PageParams, SessionDep, require
 from ..schemas.common import Page, WarehouseBrief
+from ..schemas.exchange import ExchangeIssue, ImportResult
 from ..schemas.stock import (Movement, StockByWarehouse, StockOperation,
                              StockRow, StockShare, StockSummary)
-from ..services import inventory
+from ..services import exchange, inventory
 from ..services.catalog import get as get_catalog_item
 
 router = APIRouter(tags=["Остатки"])
@@ -69,6 +70,42 @@ def operation(session: SessionDep,
         session, user, article=body.article, warehouse_id=body.warehouse_id,
         type=body.type, qty=body.qty, comment=body.comment)
     return Movement.of(entry, user)
+
+
+@router.post("/stock/import", response_model=ImportResult,
+             summary="Загрузить остатки из 1С")
+def import_stock(session: SessionDep,
+                 user: Annotated[UserAccount, require(Section.STOCK, edit=True)],
+                 body: Annotated[bytes, Body(media_type="application/xml")],
+                 ) -> ImportResult:
+    """offers.xml формата CommerceML 2 — инвентаризация своего склада.
+
+    Количество из файла становится остатком, разница уходит движением
+    «пересчёт». Склад берётся из учётной записи, а не из файла: иначе
+    загрузкой можно было бы поправить чужой склад.
+    """
+    result = exchange.import_stock(session, user, body)
+    return ImportResult(
+        created=result.created, updated=result.updated,
+        unchanged=result.unchanged, skipped=result.skipped,
+        issues=[ExchangeIssue(index=i.index, ref=i.ref, reason=i.reason)
+                for i in result.issues])
+
+
+@router.get("/stock/export", response_class=Response,
+            summary="Выгрузить остатки для 1С",
+            responses={200: {"content": {"application/xml": {}},
+                             "description": "offers.xml формата CommerceML 2"}})
+def export_stock(session: SessionDep,
+                 user: Annotated[UserAccount, require(Section.STOCK)],
+                 warehouse_id: Annotated[int | None, Query()] = None,
+                 ) -> Response:
+    """Умолчание — свой склад, как и в списке остатков."""
+    return Response(
+        content=exchange.export_stock(session,
+                                      warehouse_id or user.warehouse_id),
+        media_type="application/xml",
+        headers={"Content-Disposition": 'attachment; filename="offers.xml"'})
 
 
 @router.get("/stock/{item_id}", response_model=list[StockByWarehouse],

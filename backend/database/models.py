@@ -321,7 +321,7 @@ class OrderPosition(PkMixin, Base):
         ForeignKey("catalog_item.id", ondelete="RESTRICT"))
     qty: Mapped[float] = mapped_column(QTY)
     item: Mapped["CatalogItem"] = relationship(lazy="joined")
-   
+
     __table_args__ = (
         UniqueConstraint("order_id", "item_id"),
         CheckConstraint("qty > 0", name="qty"),

@@ -2898,6 +2898,209 @@
           }
         }
       }
+    },
+    "/catalog/import": {
+      "post": {
+        "tags": [
+          "Справочник"
+        ],
+        "summary": "Загрузить номенклатуру из 1С",
+        "description": "import.xml: позиции создаются и обновляются. Сопоставление — по коду 1С, затем по артикулу. Артикул существующей позиции не меняется.",
+        "responses": {
+          "200": {
+            "description": "Итог загрузки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "description": "Файл CommerceML 2 телом запроса, без multipart",
+          "content": {
+            "application/xml": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalog/export": {
+      "get": {
+        "tags": [
+          "Справочник"
+        ],
+        "summary": "Выгрузить номенклатуру для 1С",
+        "parameters": [
+          {
+            "name": "archived",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Включить архивные позиции"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "import.xml формата CommerceML 2",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        }
+      }
+    },
+    "/stock/import": {
+      "post": {
+        "tags": [
+          "Остатки"
+        ],
+        "summary": "Загрузить остатки из 1С",
+        "description": "offers.xml: инвентаризация своего склада. Количество из файла становится остатком, разница пишется движением recount. Склад берётся из учётной записи, а не из файла. Остаток ниже резерва отклоняется.",
+        "responses": {
+          "200": {
+            "description": "Итог загрузки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "description": "Файл CommerceML 2 телом запроса, без multipart",
+          "content": {
+            "application/xml": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock/export": {
+      "get": {
+        "tags": [
+          "Остатки"
+        ],
+        "summary": "Выгрузить остатки для 1С",
+        "parameters": [
+          {
+            "name": "warehouse_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Склад; по умолчанию свой"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "offers.xml формата CommerceML 2",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4170,6 +4373,52 @@
             "type": "string",
             "format": "password",
             "minLength": 6
+          }
+        }
+      },
+      "ExchangeIssue": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer",
+            "description": "Номер позиции в файле"
+          },
+          "ref": {
+            "type": "string",
+            "description": "Код 1С или артикул из файла"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Что именно не так"
+          }
+        },
+        "required": [
+          "index",
+          "ref",
+          "reason"
+        ]
+      },
+      "ImportResult": {
+        "type": "object",
+        "description": "Сумма счётчиков равна числу позиций в файле",
+        "properties": {
+          "created": {
+            "type": "integer"
+          },
+          "updated": {
+            "type": "integer"
+          },
+          "unchanged": {
+            "type": "integer"
+          },
+          "skipped": {
+            "type": "integer"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExchangeIssue"
+            }
           }
         }
       }

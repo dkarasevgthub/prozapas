@@ -16,7 +16,7 @@ from ..schemas.service import StatusEvent
 from ..services import orders, transitions
 from ..services.orders import Position
 
-from ..schemas.common import UserBrief 
+from ..schemas.common import UserBrief
 
 router = APIRouter(tags=["Заказы"])
 

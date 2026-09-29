@@ -25,6 +25,12 @@ from .errors import ApiError, NetworkError, Unauthorized, from_status
 DEFAULT_BASE_URL = "http://127.0.0.1:8000/api/v1"
 DEFAULT_TIMEOUT = 10.0
 
+JSON = "application/json"
+XML = "application/xml"
+#: Обмен с 1С — не разговор на единицы миллисекунд: файл разбирают, сверяют с
+#: базой и пишут движения по каждой позиции. Общего таймаута тут мало.
+EXCHANGE_TIMEOUT = 120.0
+
 
 class Transport:
     """Один разговор с сервером: адрес, токены, разбор ответов."""
@@ -83,7 +89,9 @@ class Transport:
         return self.request("DELETE", path, **kw)
 
     def request(self, method: str, path: str, *, params: dict | None = None,
-                body=None, if_match: int | str | None = None,
+                body=None, raw: bytes | None = None,
+                content_type: str | None = None, accept: str = JSON,
+                if_match: int | str | None = None,
                 idempotency_key: str | None = None, timeout: float | None = None,
                 _retry: bool = True):
         """Выполнить запрос. Возвращает разобранный JSON или None на 204.
@@ -91,9 +99,13 @@ class Transport:
         При 401 один раз пробует обновить пару токенов и повторить: истёкший
         access — обычное дело раз в пятнадцать минут, и пользователь не должен
         об этом знать.
+
+        Обмен с 1С ходит не через JSON: `raw` отдаёт тело как есть (с
+        `content_type`), а `accept` не про JSON — просит вернуть ответ байтами.
+        Разбирать XML здесь нечем и не нужно: он уходит прямо в файл.
         """
         url = self._url(path, params)
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": accept}
         if self._access:
             headers["Authorization"] = f"Bearer {self._access}"
         if if_match is not None:
@@ -101,22 +113,28 @@ class Transport:
         if idempotency_key is not None:
             headers["Idempotency-Key"] = idempotency_key
 
-        data = None
-        if body is not None:
+        data = raw
+        if raw is not None:
+            headers["Content-Type"] = content_type or "application/octet-stream"
+        elif body is not None:
             data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-            headers["Content-Type"] = "application/json"
+            headers["Content-Type"] = JSON
 
         req = urllib.request.Request(url, data=data, headers=headers, method=method)
         try:
             with urllib.request.urlopen(req, timeout=timeout or self.timeout,
                                         context=self._ssl) as resp:
-                return self._decode(resp.status, resp.read(), resp.headers)
+                payload = resp.read()
+                if accept != JSON:
+                    return payload
+                return self._decode(resp.status, payload, resp.headers)
         except urllib.error.HTTPError as exc:
             payload = self._problem(exc)
             if exc.code == 401 and _retry and self._refresh:
                 if self._try_refresh():
                     return self.request(method, path, params=params, body=body,
-                                        if_match=if_match,
+                                        raw=raw, content_type=content_type,
+                                        accept=accept, if_match=if_match,
                                         idempotency_key=idempotency_key,
                                         timeout=timeout, _retry=False)
             raise from_status(exc.code, payload) from None
