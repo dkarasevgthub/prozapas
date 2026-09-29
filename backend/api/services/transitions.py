@@ -23,9 +23,11 @@ from . import audit, inventory, visibility
 
 
 def _locked_order(session: Session, order_id: int, wh: int | None) -> Order:
+    # of=Order: joined relationships add LEFT OUTER JOINs, and PostgreSQL
+    # refuses FOR UPDATE on the nullable side of an outer join.
     order = session.scalar(
         select(Order).where(Order.id == order_id, visibility.mine(wh))
-        .with_for_update())
+        .with_for_update(of=Order))
     if order is None:
         raise NotFound("Заказ не найден")
     return order
@@ -147,12 +149,12 @@ def ship(session: Session, order_id: int, user: UserAccount,
     """
     ship_doc = session.scalar(
         select(Shipment).where(Shipment.order_id == order_id)
-        .with_for_update())
+        .with_for_update(of=Shipment))
     order = session.scalar(
         select(Order)
         .where(Order.id == order_id,
                Order.from_warehouse_id == user.warehouse_id)
-        .with_for_update())
+        .with_for_update(of=Order))
     if ship_doc is None or order is None:
         raise NotFound("Отгрузка не найдена")
     if ship_doc.status == DocStatus.DONE:

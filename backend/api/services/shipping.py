@@ -18,6 +18,9 @@ from database.models import (CatalogItem, DocStatus, Order, OrderPosition,
 
 from ..errors import Conflict, InvalidTransition, NotFound, Unprocessable
 
+#: Box weight may differ from unit_weight × qty by this share (api.md §6.3).
+WEIGHT_TOLERANCE = Decimal("0.1")
+
 
 def list_shipments(session: Session, *, wh: int, status: str | None,
                    q: str | None, weight_min: float | None,
@@ -149,14 +152,24 @@ def create_box(session: Session, order_id: int, user: UserAccount, *,
     if packed + qty_d > position.qty + Decimal("1e-9"):
         raise Unprocessable(
             f"Больше заказанного: заказано {position.qty}, уже упаковано {packed}")
+    expected_weight = position.item.unit_weight * qty_d
+    if expected_weight > 0 and abs(weight_d - expected_weight) > expected_weight * WEIGHT_TOLERANCE:
+        raise Unprocessable(
+            f"Вес {weight_d} кг не сходится с количеством: по справочнику "
+            f"около {expected_weight:.3f} кг")
 
-    seq = session.scalar(
-        select(func.count()).select_from(ShipmentBox)
+    # The suffix continues from the highest one issued, not from the box count:
+    # a deleted middle box must not free a number already printed on a label.
+    base = box_barcode(order.to_warehouse_id, order.number, article, 0)
+    issued = session.scalars(
+        select(ShipmentBox.barcode)
         .where(ShipmentBox.shipment_id == ship.id,
-               ShipmentBox.item_id == position.item_id)) or 0
+               ShipmentBox.item_id == position.item_id))
+    seq = max((int(code[len(base) + 1:]) if len(code) > len(base) else 1
+               for code in issued), default=0)
     box = ShipmentBox(shipment_id=ship.id,
                       barcode=box_barcode(order.to_warehouse_id, order.number,
-                                          article, int(seq)),
+                                          article, seq),
                       item_id=position.item_id, qty=qty_d, weight=weight_d,
                       user_id=user.id)
     # Первый, кто тронул сборку, и остаётся ответственным.

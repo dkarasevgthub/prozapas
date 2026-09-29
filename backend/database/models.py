@@ -358,6 +358,8 @@ class Shipment(PkMixin, TimestampMixin, VersionMixin, Base):
     shipped_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True)
     order: Mapped["Order"] = relationship(lazy="select")
+    responsible: Mapped[Optional["UserAccount"]] = relationship(
+        foreign_keys=[responsible_user_id], lazy="joined")
     boxes: Mapped[list["ShipmentBox"]] = relationship(
         order_by="ShipmentBox.created_at, ShipmentBox.id")
     __table_args__ = (
@@ -420,6 +422,8 @@ class Receipt(PkMixin, TimestampMixin, VersionMixin, Base):
     accepted_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True)
     order: Mapped["Order"] = relationship(lazy="select")
+    responsible: Mapped[Optional["UserAccount"]] = relationship(
+        foreign_keys=[responsible_user_id], lazy="joined")
     __table_args__ = (
         check_enum("status", DocStatus, "status"),
         Index("ix_receipt_list", "status", "created_at"),

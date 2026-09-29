@@ -234,7 +234,7 @@ backend/db/
 ├── alembic.ini              # снаружи alembic/, иначе script_location ломается
 ├── Dockerfile
 ├── Makefile
-├── requirements.txt         # sqlalchemy, alembic, psycopg — без FastAPI
+├── pyproject.toml           # sqlalchemy, alembic, psycopg — без FastAPI; uv.lock рядом
 ├── base.py                  # Base, naming_convention, миксины
 ├── types.py                 # QTY = Numeric(12,3), Weight
 ├── enums.py                 # StrEnum + сборка CHECK

@@ -1,0 +1,31 @@
+[project]
+name = "prozapas-backend"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    # Data layer
+    "sqlalchemy==2.0.31",
+    "alembic==1.13.1",
+    "psycopg[binary]==3.2.13",
+    "argon2-cffi==23.1.0",
+    # API
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "pydantic==2.10.5",
+    "pydantic-settings==2.7.1",
+    "pyjwt==2.10.1",
+]
+
+# An application, not a library: uv installs only the dependencies.
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

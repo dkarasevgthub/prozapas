@@ -7,7 +7,8 @@ from pydantic import Field, model_validator
 
 from .common import Schema
 
-_EMAIL = Field(max_length=254, pattern=r"[^@\s]+@[^@\s]+\.[^@\s]+")
+_EMAIL_PATTERN = r"[^@\s]+@[^@\s]+\.[^@\s]+"
+_EMAIL = Field(max_length=254, pattern=_EMAIL_PATTERN)
 
 
 class UserCreate(Schema):
@@ -24,7 +25,7 @@ class UserCreate(Schema):
 
 class UserUpdate(Schema):
     full_name: str | None = Field(default=None, min_length=1, max_length=200)
-    email: str | None = _EMAIL
+    email: str | None = Field(default=None, max_length=254, pattern=_EMAIL_PATTERN)
     role: str | None = Field(default=None, max_length=50)
     warehouse_id: int | None = None
     position: str | None = Field(default=None, max_length=200)

@@ -1,10 +1,15 @@
-# API. Контекст сборки — backend/, ради общего requirements.txt.
+# API. Build context is backend/ so the shared pyproject.toml and uv.lock are visible.
 FROM python:3.13-slim
+
+COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /bin/uv
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# The interpreter comes from the base image; uv must not download its own.
+ENV UV_PYTHON_DOWNLOADS=0
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-dev --no-cache
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Модели лежат рядом, а не внутри api/: их же читает alembic.
 COPY database/models.py ./database/models.py

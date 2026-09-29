@@ -53,3 +53,21 @@ backend/database  SQLAlchemy 2.0, 16 таблиц, миграции Alembic
 docs              контракт API, архитектура, ТЗ на службу устройств
 design            макеты экранов
 ```
+
+## Окружение
+
+Зависимости ставит [uv](https://docs.astral.sh/uv/) по `pyproject.toml` и `uv.lock`,
+свои у `desktop/` и у `backend/`. Виртуальное окружение создаётся в `.venv` рядом
+с `pyproject.toml`, активировать его не нужно — команды идут через `uv run`.
+
+```
+cd desktop && uv sync             # клиент и служба устройств
+uv run main.py                    # приложение; службу поднимет само
+uv run python -m devices          # служба отдельно
+
+cd backend && uv sync             # для IDE; сами сервисы живут в Docker
+make up                           # база, миграции, API — см. backend/Makefile
+make test                         # тесты API на отдельной базе prozapas_test
+```
+
+Новая зависимость — `uv add <пакет>` в нужном каталоге; `uv.lock` коммитится.

@@ -102,6 +102,19 @@ BY_STATUS: dict[int, type[ApiProblem]] = {
 
 METHOD_NOT_ALLOWED = "Метод не поддерживается этим адресом"
 
+#: Pydantic error types that mean the input could not be parsed at all.
+_STRUCTURAL = {"missing", "extra_forbidden", "enum", "literal_error"}
+
+
+def _unparsable(error: dict) -> bool:
+    """400 vs 422 (api.md §3.3): parameters and malformed bodies are parse
+    failures; a rule on a body field (qty > 0, min length) is a domain rule."""
+    if error["loc"] and error["loc"][0] != "body":
+        return True
+    kind = error["type"]
+    return (kind in _STRUCTURAL or kind.startswith("json_")
+            or kind.endswith("_type") or kind.endswith("_parsing"))
+
 
 def problem_response(problem: ApiProblem) -> JSONResponse:
     return JSONResponse(problem.payload(), status_code=problem.status,
@@ -122,8 +135,11 @@ def install(app) -> None:
                           exc: RequestValidationError) -> JSONResponse:
         # Разбор по полям кладём в detail: клиент покажет title, а detail
         # попадёт в журнал и подскажет, что именно не сошлось.
+        errors = exc.errors()
         fields = ", ".join(".".join(str(p) for p in e["loc"][1:]) or "тело"
-                           for e in exc.errors())
+                           for e in errors)
+        if all(_unparsable(e) for e in errors):
+            return problem_response(BadRequest(f"Не разобраны поля: {fields}"))
         return problem_response(Unprocessable(f"Не приняты поля: {fields}"))
 
     @app.exception_handler(HTTPException)

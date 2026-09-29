@@ -86,6 +86,14 @@ class Permission(Schema):
     can_edit: bool
 
 
+class Problem(Schema):
+    """Ошибка RFC 9457, как её собирает errors.py. Только для схемы OpenAPI."""
+    type: str
+    title: str
+    status: int
+    detail: str | None = None
+
+
 def short_name(full_name: str | None) -> str:
     """«Кузнецов Игорь Александрович» → «Кузнецов И.А.»
 

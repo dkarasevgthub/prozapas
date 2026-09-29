@@ -11,7 +11,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import delete, func, or_, select, update
+import sqlalchemy as sa
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from database.models import (AuditLog, Role, RolePermission, RefreshToken,
@@ -96,7 +97,7 @@ def _guard_last_admin(session: Session, user: UserAccount, verb: str) -> None:
 def _revoke_sessions(session: Session, user_id: int) -> None:
     """Гасит всю цепочку refresh. Access умирает сам: current_user проверяет
     статус при каждом запросе, не дожидаясь истечения токена."""
-    session.execute(update(RefreshToken)
+    session.execute(sa.update(RefreshToken)
                     .where(RefreshToken.user_id == user_id,
                            RefreshToken.revoked_at.is_(None))
                     .values(revoked_at=datetime.now(timezone.utc)))
@@ -173,6 +174,8 @@ def update(session: Session, actor: UserAccount, user_id: int,
                  action="updated", user_id=actor.id,
                  after={k: v for k, v in changes.items() if k != "status"})
     session.commit()
+    # Joined role/warehouse were loaded before the foreign keys changed.
+    session.refresh(user)
     return user
 
 
@@ -273,7 +276,7 @@ def matrix_put(session: Session, actor: UserAccount, cells) -> None:
     if admin_cell is None or not admin_cell.can_edit:
         raise Unprocessable("Нельзя лишить администратора права менять пользователей")
 
-    session.execute(delete(RolePermission))
+    session.execute(sa.delete(RolePermission))
     session.add_all(RolePermission(role_id=roles[c.role].id, section=c.section,
                                    can_view=c.can_view, can_edit=c.can_edit)
                     for c in cells)

@@ -21,7 +21,7 @@ from database.models import CatalogItem
 from ..errors import Conflict, NotFound, Unprocessable
 from . import audit
 
-_SANITIZE = re.compile(r"[^\w\s]")
+_SANITIZE = re.compile(r"[^\w\s-]")
 
 
 def list_items(session: Session, *, q: str | None, archived: bool,
@@ -95,7 +95,10 @@ def archive(session: Session, item_id: int,
 def _prefix_query(q: str) -> str | None:
     """«Труба стальная» → ``труба:* & стальная:*`` — префиксы по лексемам,
     чтобы находило и по началу артикула."""
-    tokens = _SANITIZE.sub(" ", q).split()
+    # Hyphens stay inside a token: the parser keeps "ТМЦ-00512" as a compound,
+    # and a query without the hyphen never matches the 1C code.
+    tokens = [t.strip("-") for t in _SANITIZE.sub(" ", q).split()]
+    tokens = [t for t in tokens if t]
     if not tokens:
         return None
     return " & ".join(f"{t}:*" for t in tokens)

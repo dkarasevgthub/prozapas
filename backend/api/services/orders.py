@@ -21,7 +21,7 @@ from database.models import (CatalogItem, IdempotencyKey, Order, OrderPosition,
                              Warehouse, order_number_seq)
 
 from ..errors import BadRequest, Conflict, NotFound, Unprocessable
-from . import visibility
+from . import audit, visibility
 
 
 class Position(NamedTuple):
@@ -93,7 +93,9 @@ def create(session: Session, *, user: UserAccount, idem_key: str | None,
     схем и не собирает ответ клиента сам (api-architecture §2)."""
     if not idem_key or not idem_key.strip():
         raise BadRequest("Нет заголовка Idempotency-Key")
-    idem_key = idem_key.strip()
+    # Scoped to the user: the same key from another client must not replay
+    # a stored order of a warehouse it cannot see (api.md §3.1).
+    idem_key = f"{user.id}:{idem_key.strip()}"
     request_hash = _request_hash(from_warehouse_id, comment, positions)
 
     stored = session.get(IdempotencyKey, idem_key)
@@ -135,6 +137,8 @@ def create(session: Session, *, user: UserAccount, idem_key: str | None,
                     for p in positions)
     session.add(OrderStatusEvent(order_id=order.id, status=OrderStatus.CREATED,
                                  user_id=user.id))
+    audit.record(session, entity="order", entity_id=order.id, action="created",
+                 user_id=user.id)
     payload = serialize(order)         # lazy-связи работают: транзакция открыта
     session.add(IdempotencyKey(key=idem_key, request_hash=request_hash,
                                response=payload, status_code=201))

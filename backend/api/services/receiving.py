@@ -128,7 +128,7 @@ def receive(session: Session, order_id: int, barcode: str,
         select(ShipmentBox)
         .join(Shipment, Shipment.id == ShipmentBox.shipment_id)
         .where(Shipment.order_id == order_id, ShipmentBox.barcode == barcode)
-        .with_for_update())
+        .with_for_update(of=ShipmentBox))
     if box is None:
         raise NotFound("Штрихкод не относится к этой приёмке")
     if box.received_at is not None:
@@ -152,7 +152,7 @@ def cancel_receive(session: Session, order_id: int, barcode: str,
         select(ShipmentBox)
         .join(Shipment, Shipment.id == ShipmentBox.shipment_id)
         .where(Shipment.order_id == order_id, ShipmentBox.barcode == barcode)
-        .with_for_update())
+        .with_for_update(of=ShipmentBox))
     if box is None:
         raise NotFound("Штрихкод не относится к этой приёмке")
     if box.received_at is not None:
