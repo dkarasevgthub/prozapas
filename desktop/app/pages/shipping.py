@@ -616,7 +616,12 @@ class ShippingPage(Page):
             weight = weight_dialog(self)
             if weight is None:
                 return
-        computed = max(1, round(weight / uw))
+        if weight <= 0 or uw <= 0:
+            self.show_error(type("_", (), {"title":
+                "Вес коробки и вес единицы товара должны быть больше нуля."})())
+            return
+        computed = (max(1, round(weight / uw)) if pos["unit"] == "шт."
+                    else round(weight / uw, 3))
         self._weighed = {"weight": f"{weight:.2f}", "qty": min(computed, remaining)}
         self._render()
 

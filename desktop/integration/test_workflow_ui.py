@@ -106,10 +106,15 @@ class WorkflowUITests(unittest.TestCase):
             for row in range(table.rowCount()):
                 for column in range(table.columnCount()):
                     item = table.item(row, column)
-                    if item is not None and text in item.text():
-                        table.scrollToItem(item)
+                    embedded = table.cellWidget(row, column)
+                    matches = ((item is not None and text in item.text()) or
+                               (embedded is not None and any(text in label.text()
+                                for label in embedded.findChildren(QLabel))))
+                    if matches:
+                        rectangle = table.visualRect(table.model().index(row, column))
+                        table.scrollTo(table.model().index(row, column))
                         QTest.mouseClick(table.viewport(), Qt.MouseButton.LeftButton,
-                                         pos=table.visualItemRect(item).center())
+                                         pos=rectangle.center())
                         QApplication.processEvents()
                         self.assertEqual(self.errors, [])
                         return
@@ -303,3 +308,119 @@ class WorkflowUITests(unittest.TestCase):
         wait_for(lambda: devices.available("printer"))
         self.hardware.request("detach", devices=["printer"])
         self.pack("100512", 1600)
+
+    def test_fractional_packing_and_manual_weight_fallback(self):
+        order = self.create_order([("100512", 2)])
+        self.login("e.morozova")
+        self.open_order(order)
+        self.click(self.button("Принять заказ"))
+        self.login("p.nikitin")
+        self.open_document("shipping", order)
+        box = self.pack("100512", 800)
+        self.assertEqual(box["qty"], 0.5)
+        self.hardware.request("detach", devices=["scale"])
+        wait_for(lambda: not devices.available("scale"))
+        self.select_row("100512")
+        self.dialog(self.button("Ввести вес"), {"weight": "2.4"}, confirm="Готово")
+        self.click(self.button("Напечатать этикетку"))
+        boxes = api.client.shipment(order["id"])["boxes"]
+        self.assertEqual([b["qty"] for b in boxes], [0.5, 1.5])
+        self.click(self.button("Отгрузить"))
+        self.login("p.sokolov")
+        self.open_document("receiving", order)
+        self.scan(box["barcode"])
+        self.dialog_trigger_scan(box["barcode"], {"weight": "0.8"})
+        self.assertEqual(api.client.receipt(order["id"])["boxes"][0]["actual_weight"], 0.8)
+
+    def dialog_trigger_scan(self, code, fields):
+        # A keyboard scan opens the same fallback form as the scanner event.
+        trigger = self.page._scan_input
+        trigger.setText(code)
+        errors = []
+        self.expected_dialog = True
+
+        def fill():
+            dlg = QApplication.activeModalWidget()
+            try:
+                self.assertIsNotNone(dlg)
+                for key, value in fields.items():
+                    dlg.findChild(QLineEdit, f"form-{key}").setText(value)
+                self.click(self.button("Готово", dlg))
+            except Exception as error:
+                errors.append(str(error))
+                if dlg:
+                    dlg.reject()
+
+        QTimer.singleShot(50, fill)
+        try:
+            QTest.keyClick(trigger, Qt.Key.Key_Return)
+        finally:
+            self.expected_dialog = False
+        self.assertEqual(errors, [])
+
+    def test_cancellation_releases_reserve_and_decline_records_reason(self):
+        order = self.create_order([("100512", 1)])
+        self.login("e.morozova")
+        self.open_order(order)
+        self.click(self.button("Принять заказ"))
+        self.login("o.egorova")
+        self.open_order(order)
+        self.dialog(self.button("Отменить заказ"), {"reason": "UI cancellation"}, confirm="Отменить заказ")
+        self.assertEqual(api.client.order(order["id"])["status"], "cancelled")
+        another = self.create_order([("100512", 1)])
+        self.login("e.morozova")
+        self.open_order(another)
+        self.dialog(self.button("Отклонить"), {"reason": "UI decline"}, confirm="Отклонить заказ")
+        self.assertEqual(api.client.order(another["id"])["status"], "declined")
+        self.assertEqual(api.client.order_history(another["id"])[-1]["reason"], "UI decline")
+
+    def test_user_creation_password_change_block_unblock_and_delete(self):
+        self.login("admin")
+        self.navigate("users")
+        login = "ui-" + uuid.uuid4().hex[:8]
+        self.dialog(self.button("+ Добавить пользователя"), {
+            "full_name": "UI Employee", "login": login,
+            "email": login + "@example.test", "password": PASSWORD}, confirm="Добавить")
+        self.page._search_input.setText("UI Employee")
+        self.select_row(login + "@example.test")
+        user_id = self.page.params["id"]
+        self.dialog(self.button("Редактировать"), {"full_name": "UI Employee edited"})
+        self.assertEqual(api.client.user(user_id)["full_name"], "UI Employee edited")
+        self.dialog(self.button("Сменить пароль"), {"password": PASSWORD + "2", "repeat": PASSWORD + "2"})
+        self.click(self.button("Заблокировать"))
+        self.assertEqual(api.client.user(user_id)["status"], "blocked")
+        self.click(self.button("Разблокировать"))
+        self.assertEqual(api.client.user(user_id)["status"], "active")
+        self.dialog(self.button("Удалить"), confirm="Удалить")
+        self.assertEqual(api.client.users(q=login)["total"], 0)
+
+    def test_remembered_session_resumes_without_password_and_network_failure_recovers(self):
+        form = self.window._login
+        form.login.setText("o.egorova")
+        form.password.setText(PASSWORD)
+        form.remember.setChecked(True)
+        self.click(self.button("Войти", form))
+        self.assertTrue(session._file.exists())
+        previous = api.transport.refresh_token
+        api.transport.clear()
+        session.user = session.warehouse = None
+        old_window = self.window
+        old_window.hide()
+        self.window = RootWindow()
+        self.window.show()
+        old_window.deleteLater()
+        self.assertTrue(session.authorized)
+        self.assertNotEqual(api.transport.refresh_token, previous)
+        self.click(self.window._main._sidebar.findChild(QPushButton, "logoutBtn"))
+        original = api.transport.base_url
+        api.transport.base_url = "http://127.0.0.1:1"
+        try:
+            form = self.window._login
+            form.login.setText("o.egorova")
+            form.password.setText(PASSWORD)
+            self.click(self.button("Войти", form))
+            self.assertFalse(session.authorized)
+            self.assertIn("недоступен", form.error.text())
+        finally:
+            api.transport.base_url = original
+        self.login("o.egorova")
