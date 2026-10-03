@@ -171,6 +171,7 @@ class WorkflowUITests(unittest.TestCase):
 
     def open_order(self, order):
         self.navigate("orders")
+        self.click(self.button("Исходящие" if session.warehouse_id == order["to_warehouse"]["id"] else "Входящие"))
         self.page._search_input.setText(str(order["number"]))
         self.select_row(str(order["number"]))
 
@@ -360,6 +361,7 @@ class WorkflowUITests(unittest.TestCase):
 
     def test_cancellation_releases_reserve_and_decline_records_reason(self):
         order = self.create_order([("100512", 1)])
+        reserved_before = api.client.stock(q="100512", warehouse_id=order["from_warehouse"]["id"])["items"][0]["reserved"]
         self.login("e.morozova")
         self.open_order(order)
         self.click(self.button("Принять заказ"))
@@ -367,6 +369,7 @@ class WorkflowUITests(unittest.TestCase):
         self.open_order(order)
         self.dialog(self.button("Отменить заказ"), {"reason": "UI cancellation"}, confirm="Отменить заказ")
         self.assertEqual(api.client.order(order["id"])["status"], "cancelled")
+        self.assertEqual(api.client.stock(q="100512", warehouse_id=order["from_warehouse"]["id"])["items"][0]["reserved"], reserved_before)
         another = self.create_order([("100512", 1)])
         self.login("e.morozova")
         self.open_order(another)

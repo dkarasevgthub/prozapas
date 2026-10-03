@@ -79,7 +79,7 @@ class WireClient:
 
 
 class ServiceProcess:
-    def __init__(self, *, simulated=True, extra_env=None, pipe=None, idle=0):
+    def __init__(self, *, simulated=True, extra_env=None, pipe=None, idle=0, executable=None):
         self.directory = tempfile.TemporaryDirectory(prefix="prozapas-devices-test-")
         self.root = Path(self.directory.name)
         self.pipe = pipe or "prozapas-test-" + uuid.uuid4().hex
@@ -92,7 +92,9 @@ class ServiceProcess:
                             "PROZAPAS_PRINTER_NAME": "prozapas-missing-printer",
                             "PROZAPAS_PRINTER_OUTPUT_FILE": str(self.root / "printed") if not simulated else "",
                             **(extra_env or {})}
-        arguments = [sys.executable, "-m", "devices", "--idle-timeout", str(idle)]
+        arguments = ([str(executable), "--devices-service"] if executable
+                     else [sys.executable, "-m", "devices"])
+        arguments += ["--idle-timeout", str(idle)]
         if simulated:
             arguments.append("--simulator-only")
         self.process = subprocess.Popen(arguments, cwd=DESKTOP, env=self.environment,
@@ -100,7 +102,8 @@ class ServiceProcess:
                                         creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
         self.clients = []
         try:
-            wait_for(self._ready, message="separate device service startup")
+            wait_for(self._ready, timeout=20 if executable else 5,
+                     message="separate device service startup")
         except Exception:
             self.log.flush()
             diagnostic = (self.root / "service.log").read_text(encoding="utf-8")[-4000:]

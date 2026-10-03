@@ -44,7 +44,18 @@ jobs:
         run: |
           docker run --rm --network host -e TEST_DATABASE_URL \
             -v "$PWD:/repo" -w /repo/backend prozapas-ci \
-            uv run --python /usr/local/bin/python --locked pytest -q
+            uv run --python /usr/local/bin/python --locked pytest -q \
+              --junitxml=/repo/system-results/backend.xml \
+              --cov=api --cov=database --cov-branch \
+              --cov-report=term --cov-report=xml:/repo/system-results/coverage.xml \
+              --cov-report=html:/repo/system-results/coverage-html
+      - name: Upload backend test results and coverage
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backend-test-results
+          path: system-results/
+          if-no-files-found: ignore
 
   desktop:
     name: Desktop tests
@@ -70,6 +81,17 @@ jobs:
           $env:APPDATA = Join-Path $env:RUNNER_TEMP 'prozapas-tests'
           $env:PYTHONPATH = $PWD.Path
           uv run --locked python -m unittest discover -s tests -v
+      - name: Build Windows executable from locked dependencies
+        working-directory: desktop
+        run: |
+          "PROZAPAS_API=http://127.0.0.1:8000/api/v1`nPROZAPAS_SIMULATOR=true" | Set-Content -Encoding utf8 .env
+          uv run --locked --group build python build.py
+      - name: Test packaged device service from outside the executable
+        working-directory: desktop
+        run: |
+          $env:PYTHONPATH = $PWD.Path
+          $env:PROZAPAS_TEST_EXE = Join-Path $PWD 'dist/ProZapas.exe'
+          uv run --locked python -m unittest discover -s tests -p test_frozen_contract.py -v
 
   system:
     name: System tests
@@ -111,6 +133,10 @@ jobs:
         run: uv run --locked python -m unittest discover -s tests -v
       - name: Run complete UI workflows and concurrent HTTP transactions
         run: backend/.venv/bin/python deployment/run_system_tests.py
+      - name: Restore PostgreSQL backup and compare all tables
+        env:
+          PG_TEST_CONTAINER: ${{ job.services.postgres.id }}
+        run: backend/.venv/bin/python deployment/check_backup_restore.py
       - name: Upload UI screenshots and API diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

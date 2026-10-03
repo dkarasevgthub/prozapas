@@ -80,6 +80,7 @@ class ReleaseRecoveryTests(unittest.TestCase):
     def test_failed_migration_and_health_restore_previous_api_without_reversing_db(self):
         for failure in ("migration", "health"):
             with self.subTest(failure=failure):
+                self.sha = ("b" if failure == "migration" else "c") * 40
                 self.calls.clear()
                 with self.assertRaises(subprocess.CalledProcessError):
                     self.run_release(failure=failure)
