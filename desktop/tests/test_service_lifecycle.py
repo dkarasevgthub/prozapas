@@ -52,7 +52,7 @@ class ServiceLifecycleTests(unittest.TestCase):
         client = WireClient(self.pipe)
         client.request("shutdown")
         client.close()
-        self.assertTrue(self.host._process.waitForFinished(5000))
+        wait_for(lambda: not self.host._alive(), message="owned service exit")
         self.assertTrue(self.host.ensure_running())
         self.assertTrue(self.host.owned)
         self.assertTrue(devices.pipe_answers())

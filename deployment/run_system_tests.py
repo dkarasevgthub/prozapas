@@ -63,7 +63,12 @@ def main():
                 subprocess.run([str(desktop_python), "-m", "unittest", "discover", "-s", "integration", "-v"],
                                cwd=ROOT / "desktop", env=desktop_env, check=True, timeout=300)
             finally:
-                server.terminate()
+                if os.name == "nt":
+                    # The venv launcher can spawn a Python child. Stop only this API's tree.
+                    subprocess.run(["taskkill", "/PID", str(server.pid), "/T", "/F"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                else:
+                    server.terminate()
                 server.wait(timeout=10)
     with psycopg.connect(plain, autocommit=True) as db:
         with (artifacts / "schema.txt").open("w") as report:

@@ -63,6 +63,8 @@ jobs:
     timeout-minutes: 15
     env:
       QT_QPA_PLATFORM: offscreen
+      SYSTEM_DATABASE_URL: postgresql+psycopg://prozapas_user:ci-test-password@127.0.0.1:55432/prozapas_system_test
+      SYSTEM_TEST_ARTIFACTS: ${{ github.workspace }}/windows-system-results
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -81,6 +83,16 @@ jobs:
           $env:APPDATA = Join-Path $env:RUNNER_TEMP 'prozapas-tests'
           $env:PYTHONPATH = $PWD.Path
           uv run --locked python -m unittest discover -s tests -v
+      - name: Start isolated PostgreSQL and install backend dependencies
+        run: |
+          uv sync --locked --directory backend
+          $pgData = Join-Path $env:RUNNER_TEMP 'prozapas-pg'
+          & "$env:PGBIN/initdb.exe" -D $pgData -U prozapas_user -A trust
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:PGBIN/pg_ctl.exe" -D $pgData -l "$env:RUNNER_TEMP/prozapas-pg.log" -o '-h 127.0.0.1 -p 55432' -w start
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run complete Windows UI workflows and concurrent HTTP transactions
+        run: backend/.venv/Scripts/python.exe deployment/run_system_tests.py
       - name: Build Windows executable from locked dependencies
         working-directory: desktop
         run: |
@@ -92,6 +104,21 @@ jobs:
           $env:PYTHONPATH = $PWD.Path
           $env:PROZAPAS_TEST_EXE = Join-Path $PWD 'dist/ProZapas.exe'
           uv run --locked python -m unittest discover -s tests -p test_frozen_contract.py -v
+
+      - name: Stop isolated PostgreSQL
+        if: always()
+        run: |
+          $pgData = Join-Path $env:RUNNER_TEMP 'prozapas-pg'
+          if (Test-Path (Join-Path $pgData 'postmaster.pid')) {
+            & "$env:PGBIN/pg_ctl.exe" -D $pgData -m fast -w stop
+          }
+      - name: Upload Windows UI screenshots and API diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: windows-system-test-results
+          path: windows-system-results/
+          if-no-files-found: ignore
 
   system:
     name: System tests

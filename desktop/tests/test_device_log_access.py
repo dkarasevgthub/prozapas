@@ -1,4 +1,6 @@
 """Log access is checked on construction, opening and logout."""
+from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -15,6 +17,11 @@ class DeviceLogAccessTests(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
 
     def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        session_file = patch.object(session, "_file", Path(directory.name) / "session.json")
+        session_file.start()
+        self.addCleanup(session_file.stop)
         saved_user = session.user
         self.addCleanup(setattr, session, "user", saved_user)
         devicelog.close_device_log()
