@@ -8,11 +8,13 @@ import uuid
 os.environ["PROZAPAS_PIPE_NAME"] = "prozapas-ui-" + uuid.uuid4().hex
 
 from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QFont, QRawFont
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox, QLabel,
                             QLineEdit, QPushButton, QTableWidget, QWidget)
 
 from app import api, devices, reference, theme
+from app.fonts import setup_fonts
 from app.session import session
 from app.sidebar import NavRow
 from app.window import RootWindow
@@ -26,6 +28,11 @@ class WorkflowUITests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = qt_app()
+        setup_fonts(cls.app)
+        for family in (theme.font_body(), theme.font_heading()):
+            glyphs = QRawFont.fromFont(QFont(family, 12)).glyphIndexesForString("ProЗапас Заказ 123")
+            if not glyphs or not all(glyphs):
+                raise AssertionError(f"UI font {family!r} cannot render the demonstrated interface")
         cls.app.setStyleSheet(theme.build_qss())
 
     def setUp(self):

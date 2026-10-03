@@ -63,7 +63,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 15
     env:
-      QT_QPA_PLATFORM: offscreen
+      QT_QPA_PLATFORM: windows
       SYSTEM_DATABASE_URL: postgresql+psycopg://prozapas_user:ci-test-password@127.0.0.1:55432/prozapas_system_test
       SYSTEM_TEST_ARTIFACTS: ${{ github.workspace }}/windows-system-results
     steps:

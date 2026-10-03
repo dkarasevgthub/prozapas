@@ -30,7 +30,7 @@ class SerialDriverContractTests(unittest.TestCase):
         self.assertEqual(states, dict.fromkeys(("scanner", "scale", "printer"), "online"))
         self.client.request("subscribe", events=["scan", "weight", "device"])
 
-    def test_scanner_cr_lf_fragmentation_unicode_and_multiple_barcodes(self):
+    def test_scanner_cr_lf_fragmentation_and_multiple_barcodes(self):
         os.write(self.scanner, b"BAR")
         os.write(self.scanner, b"CODE-123\r\nNEXT-456\n")
         self.client.event("scan", code="BARCODE-123")
@@ -67,4 +67,3 @@ class SerialDriverContractTests(unittest.TestCase):
             responder.join(timeout=4)
         self.assertTrue(result["ok"], result)
         self.assertEqual(observed, [b"TARE\n"])
-
