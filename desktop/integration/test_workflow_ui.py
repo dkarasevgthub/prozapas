@@ -92,7 +92,7 @@ class WorkflowUITests(unittest.TestCase):
 
     def login(self, name):
         if session.authorized:
-            self.click(self.window.findChild(QPushButton, "logoutBtn"))
+            self.click(self.window._main._sidebar.findChild(QPushButton, "logoutBtn"))
         form = self.window._login
         form.login.setText(name)
         form.password.setText(PASSWORD)
@@ -193,7 +193,8 @@ class WorkflowUITests(unittest.TestCase):
 
     def scan(self, code):
         self.assertTrue(self.hardware.request("emit", event="scan", code=code)["ok"])
-        QTest.qWait(40)
+        # Separate legitimate scans by the client's 500 ms duplicate filter.
+        QTest.qWait(550)
         self.assertEqual(self.errors, [])
 
     def test_complete_transfer_through_widgets_print_scan_and_stock_balances(self):
@@ -254,7 +255,7 @@ class WorkflowUITests(unittest.TestCase):
         self.navigate("catalog")
         article = "UI-" + uuid.uuid4().hex[:8]
         self.dialog(self.button("+ Добавить позицию"), {
-            "article": article, "name": "UI product", "unit": "шт.", "unit_weight": "0.25"})
+            "article": article, "name": "UI product", "unit": "шт.", "unit_weight": "0.25"}, confirm="Добавить")
         search = next(w for w in self.page.findChildren(QLineEdit) if w.placeholderText() == "Код, артикул или наименование")
         search.setText(article)
         self.select_row(article)
@@ -283,7 +284,7 @@ class WorkflowUITests(unittest.TestCase):
             sidebar = self.window._main._sidebar
             self.assertEqual(sidebar.findChild(QPushButton, "deviceLogsButton") is not None, admin)
             self.assertEqual(sidebar.findChild(QPushButton, "printerSettingsButton") is not None, admin)
-        self.click(self.window.findChild(QPushButton, "logoutBtn"))
+        self.click(self.window._main._sidebar.findChild(QPushButton, "logoutBtn"))
         self.assertFalse(session.authorized)
         self.assertFalse(api.transport.authorized)
 
