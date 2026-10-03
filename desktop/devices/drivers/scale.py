@@ -82,7 +82,7 @@ class ScaleDriver(DeviceDriver):
 
     def _do_open(self) -> None:
         """Open the serial port and start reading weight data."""
-        if not self._port_name or not self._port_name.upper().startswith("COM"):
+        if not self._port_name or not self._port_name.upper().startswith(("COM", "/")):
             found_port = self._find_port()
             if found_port:
                 logger.info("ScaleDriver: found port %s", found_port)

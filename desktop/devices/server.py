@@ -79,9 +79,9 @@ class DeviceServer(QObject):
 
     def stop(self) -> None:
         logger.info("DeviceServer: stopping")
-        for session in self._sessions:
+        sessions, self._sessions = self._sessions, []
+        for session in sessions:
             self._close_session(session)
-        self._sessions.clear()
         self._server.close()
 
     def broadcast(self, event_name: str, data: dict[str, Any]) -> None:
@@ -175,9 +175,10 @@ class DeviceServer(QObject):
                 return
 
     def _on_client_disconnected(self, session: ClientSession) -> None:
-        if session in self._sessions:
-            self._sessions.remove(session)
-            logger.info("DeviceServer: client disconnected (total=%d)", len(self._sessions))
+        if session not in self._sessions:
+            return
+        self._sessions.remove(session)
+        logger.info("DeviceServer: client disconnected (total=%d)", len(self._sessions))
         self._close_session(session)
         self.client_disconnected.emit()
 

@@ -78,7 +78,7 @@ class ScannerDriver(DeviceDriver):
 
     def _do_open(self) -> None:
         """Open the COM port, or search for one if not configured."""
-        if not self._port_name or not self._port_name.upper().startswith("COM"):
+        if not self._port_name or not self._port_name.upper().startswith(("COM", "/")):
             found_port = self._find_port()
             if found_port:
                 logger.info("ScannerDriver: found port %s", found_port)

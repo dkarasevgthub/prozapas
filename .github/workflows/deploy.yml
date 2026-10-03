@@ -64,16 +64,64 @@ jobs:
         run: |
           python -m pip install uv==0.12.0
           uv sync --locked
-      - name: Run desktop access and settings tests
+      - name: Run desktop and independent device contract tests
         working-directory: desktop
         run: |
           $env:APPDATA = Join-Path $env:RUNNER_TEMP 'prozapas-tests'
           $env:PYTHONPATH = $PWD.Path
           uv run --locked python -m unittest discover -s tests -v
 
+  system:
+    name: System tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      QT_QPA_PLATFORM: offscreen
+      SYSTEM_DATABASE_URL: postgresql+psycopg://prozapas_user:ci-test-password@127.0.0.1:5432/prozapas_system_test
+      SYSTEM_TEST_ARTIFACTS: ${{ github.workspace }}/system-results
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: prozapas_user
+          POSTGRES_PASSWORD: ci-test-password
+          POSTGRES_DB: postgres
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U prozapas_user -d postgres"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Install Qt runtime and locked dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libegl1 libopengl0 libxkbcommon-x11-0 libxcb-cursor0
+          python -m pip install uv==0.12.0
+          (cd backend && uv sync --locked)
+          (cd desktop && uv sync --locked)
+      - name: Run real serial driver and independent device tests on Linux
+        working-directory: desktop
+        env:
+          PYTHONPATH: ${{ github.workspace }}/desktop:${{ github.workspace }}/desktop/tests
+        run: uv run --locked python -m unittest discover -s tests -v
+      - name: Run complete UI workflows and concurrent HTTP transactions
+        run: backend/.venv/bin/python deployment/run_system_tests.py
+      - name: Upload UI screenshots and API diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: system-test-results
+          path: system-results/
+          if-no-files-found: ignore
+
   deploy:
     name: Promote and deploy
-    needs: [backend, desktop]
+    needs: [backend, desktop, system]
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/deploy')
     runs-on: ubuntu-latest
     timeout-minutes: 20
