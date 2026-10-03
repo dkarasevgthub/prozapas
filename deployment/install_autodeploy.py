@@ -36,6 +36,13 @@ def main():
     host_key = Path("/etc/ssh/ssh_host_ed25519_key.pub").read_text().split()
     (ssh / "prozapas_actions_known_hosts").write_text(
         "185.196.117.2 " + " ".join(host_key[:2]) + "\n")
+    marker_key = ssh / "prozapas_release_marker"
+    if not marker_key.exists():
+        subprocess.run(["ssh-keygen", "-t", "ed25519", "-N", "", "-C",
+                        "prozapas-release-marker", "-f", str(marker_key)], check=True,
+                       stdout=subprocess.DEVNULL)
+    print("Register /root/.ssh/prozapas_release_marker.pub as the repository's write deploy key")
+    print("Pin github.com host keys from the official GitHub metadata API before publishing")
     print("Installed restricted deployment command and dedicated Actions key")
 
 

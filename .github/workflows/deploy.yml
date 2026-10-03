@@ -2,9 +2,9 @@ name: CI and deployment
 
 on:
   push:
-    branches: [dev, main, deploy]
+    branches: [main]
   pull_request:
-    branches: [dev, main]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -174,13 +174,14 @@ jobs:
           if-no-files-found: ignore
 
   deploy:
-    name: Promote and deploy
+    name: Deploy and record release
     needs: [backend, desktop, system]
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/deploy')
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: write
+      contents: read
+    environment: production
     concurrency:
       group: prozapas-production
       cancel-in-progress: false
@@ -191,7 +192,8 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
-      - name: Promote tested main to deploy
+          persist-credentials: false
+      - name: Check tested main before deployment
         id: promote
         run: python3 deployment/promote.py
       - name: Configure restricted deployment key
@@ -215,7 +217,15 @@ jobs:
             "root@$DEPLOY_HOST" "deploy $DEPLOY_SHA"
       - name: Verify public HTTPS API
         if: steps.promote.outputs.ready == 'true'
-        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 "https://$DEPLOY_HOST/api/v1/health"
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 "https://$DEPLOY_HOST/api/v1/health"
+          python3 - <<'PY'
+          import json, os, urllib.request
+          with urllib.request.urlopen(f"https://{os.environ['DEPLOY_HOST']}/api/v1/version", timeout=15) as response:
+              version = json.load(response)
+          assert version['version'] == os.environ['DEPLOY_SHA'], version
+          print(version)
+          PY
       - name: Remove deployment credentials
         if: always()
         run: rm -f "$RUNNER_TEMP/prozapas-ssh/key" "$RUNNER_TEMP/prozapas-ssh/known_hosts"
