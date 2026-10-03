@@ -287,6 +287,7 @@ class ReceivingPage(Page):
         sub.setObjectName("muted"); left.addWidget(sub)
         head.addLayout(left); head.addStretch(1)
         complete = button("Завершить приемку", "primary")
+        complete.setEnabled(not done)
         complete.clicked.connect(lambda: self._request_complete(b))
         head.addWidget(complete, 0, Qt.AlignmentFlag.AlignTop)
         self._container.add_block(head)
@@ -360,6 +361,7 @@ class ReceivingPage(Page):
             fl.addWidget(hint)
 
         self._scan_input = QLineEdit()
+        self._scan_input.setEnabled(bd["status"] != "done")
         self._scan_input.setStyleSheet(f"font-family:{theme.font_heading()};")
         self._scan_input.returnPressed.connect(lambda: self._scan(self._scan_input.text()))
         self._scan_input.setPlaceholderText("Штрихкод коробки, например WH1281187201187-02")
@@ -483,6 +485,8 @@ class ReceivingPage(Page):
             self._scan(code)
 
     def _scan(self, barcode):
+        if self._doc["status"] == "done":
+            return
         code = (barcode or "").strip().upper()
         if not code:
             return

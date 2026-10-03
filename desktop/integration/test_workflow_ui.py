@@ -231,6 +231,11 @@ class WorkflowUITests(unittest.TestCase):
             self.scan(box["barcode"])
             self.assertIsNone(self.page._active_box)
         self.click(self.button("Завершить приемку"))
+        self.assertFalse(self.button("Завершить приемку").isEnabled())
+        self.assertFalse(self.page._scan_input.isEnabled())
+        self.scan(boxes[0]["barcode"])
+        self.assertIsNone(self.page._active_box)
+        self.assertEqual(self.page._scan_error, "")
         self.assertEqual(api.client.order(order["id"])["status"], "received")
         self.assertEqual([event["status"] for event in api.client.order_history(order["id"])],
                          ["created", "processing", "shipped", "received"])
