@@ -47,6 +47,7 @@ jobs:
             uv run --python /usr/local/bin/python --locked pytest -q \
               --junitxml=/repo/system-results/backend.xml \
               --cov=api --cov=database --cov-branch \
+              --cov-fail-under=90 \
               --cov-report=term --cov-report=xml:/repo/system-results/coverage.xml \
               --cov-report=html:/repo/system-results/coverage-html
       - name: Upload backend test results and coverage
@@ -87,7 +88,7 @@ jobs:
         run: |
           uv sync --locked --directory backend
           $pgData = Join-Path $env:RUNNER_TEMP 'prozapas-pg'
-          & "$env:PGBIN/initdb.exe" -D $pgData -U prozapas_user -A trust
+          & "$env:PGBIN/initdb.exe" -D $pgData -U prozapas_user -A trust -E UTF8
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & "$env:PGBIN/pg_ctl.exe" -D $pgData -l "$env:RUNNER_TEMP/prozapas-pg.log" -o '-h 127.0.0.1 -p 55432' -w start
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
