@@ -23,7 +23,7 @@ def main():
     with psycopg.connect(plain.rsplit("/", 1)[0] + "/postgres", autocommit=True) as db:
         db.execute("DROP DATABASE IF EXISTS prozapas_system_test WITH (FORCE)")
         db.execute("CREATE DATABASE prozapas_system_test")
-    env = {**os.environ, "DATABASE_URL": database_url,
+    env = {**os.environ, "DATABASE_URL": database_url, "PYTHONUTF8": "1",
            "JWT_SECRET": "system-test-secret-" + "0" * 40,
            "SEED_PASSWORD": "system-test-password", "ADMIN_LOGIN": "admin",
            "ADMIN_EMAIL": "admin@prozapas.test", "APP_VERSION": "system-test"}
