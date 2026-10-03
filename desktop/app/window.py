@@ -1,10 +1,11 @@
 """RootWindow — switches between the login screen and the main application."""
-from PyQt6.QtWidgets import QMainWindow, QStackedWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 
 from . import reference
 from .pages.login import LoginPage
 from .session import session
 from .shell import MainView
+from .widgets.devicelog import close_device_log
 
 
 class RootWindow(QMainWindow):
@@ -32,6 +33,7 @@ class RootWindow(QMainWindow):
             self._show_login()
 
     def _show_login(self):
+        close_device_log()
         self._stack.setCurrentWidget(self._login)
 
     def _enter_app(self):
@@ -51,3 +53,8 @@ class RootWindow(QMainWindow):
         reference.clear()
         self._login.reset()
         self._show_login()
+
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        if event.isAccepted():
+            QApplication.instance().quit()

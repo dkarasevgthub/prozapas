@@ -44,6 +44,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scanner-port", type=str, default=None, help="Override scanner COM port.")
     parser.add_argument("--scale-port", type=str, default=None, help="Override scale COM port.")
     parser.add_argument("--printer-name", type=str, default=None, help="Override printer name.")
+    parser.add_argument(
+        "--simulator-only", action="store_true",
+        help="Use simulator attachments only; leave real hardware offline.",
+    )
     return parser.parse_args()
 
 
@@ -121,12 +125,14 @@ def main() -> None:
 
     scanner_slot, scale_slot, printer_slot = _build_slots(config, app)
 
-    # Open real drivers
+    # Demo mode must not fall back to Windows printers or serial hardware.
     for slot, label in (
         (scanner_slot, "scanner"),
         (scale_slot, "scale"),
         (printer_slot, "printer"),
     ):
+        if args.simulator_only:
+            continue
         try:
             slot._real.open()
         except Exception as exc:

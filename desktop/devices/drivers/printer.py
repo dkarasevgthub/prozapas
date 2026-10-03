@@ -96,6 +96,7 @@ class PrinterDriver(DeviceDriver):
         # Включаем авто-переподключение, чтобы драйвер периодически искал принтер
         super().__init__(device_id="printer", auto_reconnect=True, parent=parent)
         self._printer_name: str = name or ""
+        self._configured_name: bool = bool(name)
         self._encoding: str = encoding
         self._output_file: str = output_file or ""
 
@@ -141,8 +142,9 @@ class PrinterDriver(DeviceDriver):
         printers = list_printers()
         if self._printer_name not in printers:
             logger.warning("PrinterDriver: printer '%s' not found in system", self._printer_name)
-            # Сбрасываем имя, чтобы в следующий раз снова сработал автопоиск
-            self._printer_name = ""
+            # An explicitly selected label printer must never fall back to PDF/OneNote.
+            if not self._configured_name:
+                self._printer_name = ""
             self._set_state(STATE_OFFLINE, "searching")
             return
 

@@ -40,10 +40,13 @@ class SimulatorWindow(QWidget):
     #: Сколько тактов груз «оседает», прежде чем весы объявят вес устойчивым.
     STREAM_SETTLE_TICKS = 12          # ≈1.2 секунды при 10 Гц
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None, *, auto_connect=False, pipe_name="prozapas-devices"):
+        super().__init__(parent, Qt.WindowType.Window)
+        self.auto_connect = auto_connect
+        self._buffer = bytearray()
         self.socket = None
         self.next_id = 1
+        self._requests = {}
         self.device_states = {
             "scanner": None,   # None, "online", "offline", "error"
             "scale": None,
@@ -59,9 +62,12 @@ class SimulatorWindow(QWidget):
         self.stream_timer.timeout.connect(self._stream_tick)
 
         self.init_ui()
+        self.pipe_edit.setText(pipe_name)
         self.setWindowTitle("Devices Service Simulator")
         self.resize(900, 850)
         self._update_ui_states()
+        if auto_connect:
+            QTimer.singleShot(0, self.connect_to_server)
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -313,14 +319,18 @@ class SimulatorWindow(QWidget):
             self.log("Уже подключено", "info")
             return
         pipe_name = self.pipe_edit.text().strip() or "prozapas-devices"
-        self.socket = QLocalSocket()
+        if self.socket is not None:
+            self.socket.abort()
+            self.socket.deleteLater()
+        self._buffer.clear()
+        self.socket = QLocalSocket(self)
         self.socket.connected.connect(self.on_connected)
         self.socket.disconnected.connect(self.on_disconnected)
         self.socket.errorOccurred.connect(self.on_error)
         self.socket.readyRead.connect(self.on_ready_read)
-        self.socket.connectToServer(pipe_name)
         self.status_label.setText("Подключение...")
         self.status_label.setStyleSheet("color: orange;")
+        self.socket.connectToServer(pipe_name)
 
     def disconnect_from_server(self):
         if self.socket:
@@ -340,6 +350,12 @@ class SimulatorWindow(QWidget):
         self.log("Подключено к каналу", "info")
         self.send_request("devices")
         self.send_request("subscribe", events=["scan", "weight", "device", "job", "print.job"])
+        if self.auto_connect:
+            for checkbox in (self.scan_sim_cb, self.scale_sim_cb, self.printer_sim_cb):
+                checkbox.blockSignals(True)
+                checkbox.setChecked(True)
+                checkbox.blockSignals(False)
+            self.send_request("attach", devices=["scanner", "scale", "printer"])
         self._update_ui_states()
 
     def on_disconnected(self):
@@ -351,6 +367,12 @@ class SimulatorWindow(QWidget):
             self.socket.deleteLater()
             self.socket = None
         self.attached_devices.clear()
+        self._requests.clear()
+        self._buffer.clear()
+        for checkbox in (self.scan_sim_cb, self.scale_sim_cb, self.printer_sim_cb):
+            checkbox.blockSignals(True)
+            checkbox.setChecked(False)
+            checkbox.blockSignals(False)
         self._update_ui_states()
 
     def on_error(self, error):
@@ -365,11 +387,12 @@ class SimulatorWindow(QWidget):
     def on_ready_read(self):
         if not self.socket:
             return
-        data = self.socket.readAll().data().decode('utf-8', errors='ignore')
-        for line in data.split('\n'):
-            line = line.strip()
-            if line:
-                self.process_response(line)
+        self._buffer.extend(bytes(self.socket.readAll()))
+        while b"\n" in self._buffer:
+            line, _, remaining = self._buffer.partition(b"\n")
+            self._buffer = bytearray(remaining)
+            if line.strip():
+                self.process_response(line.decode("utf-8", errors="replace"))
 
     def send_request(self, cmd, **kwargs):
         if not self.socket or self.socket.state() != QLocalSocket.LocalSocketState.ConnectedState:
@@ -377,6 +400,7 @@ class SimulatorWindow(QWidget):
             return
         req = {"id": self.next_id, "cmd": cmd}
         req.update(kwargs)
+        self._requests[self.next_id] = cmd
         self.next_id += 1
         payload = json.dumps(req, ensure_ascii=False, separators=(',', ':')) + '\n'
         try:
@@ -405,11 +429,14 @@ class SimulatorWindow(QWidget):
 
         # Обработка ответов на attach/detach
         req_id = data.get("id")
+        command = self._requests.pop(req_id, None)
         if data.get("ok"):
-            # Служба в ответе на attach/detach присылает актуальный список ролей —
-            # берём его целиком, чтобы своё представление не разъезжалось с её.
+            # attach возвращает только новые роли; detach — все оставшиеся.
             if "attached" in data:
-                self.attached_devices = set(data["attached"])
+                if command == "attach":
+                    self.attached_devices.update(data["attached"])
+                else:
+                    self.attached_devices = set(data["attached"])
         elif "error" in data:
             err_code = data["error"].get("code")
             if err_code == "busy":

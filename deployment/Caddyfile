@@ -1,0 +1,14 @@
+{
+	default_sni {$API_HOST}
+}
+
+{$API_HOST} {
+	tls {
+		issuer acme {
+			dir https://acme-v02.api.letsencrypt.org/directory
+			profile shortlived
+		}
+	}
+	encode gzip
+	reverse_proxy api:8000
+}

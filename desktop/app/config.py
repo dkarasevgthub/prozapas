@@ -36,6 +36,7 @@ DEFAULTS: dict[str, str] = {
     "PROZAPAS_PIPE_NAME": "prozapas-devices",
     "PROZAPAS_IDLE_TIMEOUT": "30",
     "PROZAPAS_DEVICES_SERVICE": "",
+    "PROZAPAS_SIMULATOR": "true",
     # ── этикетка коробки ──
     "PROZAPAS_LABEL_WIDTH_MM": "58",
     "PROZAPAS_LABEL_HEIGHT_MM": "40",
@@ -54,7 +55,13 @@ def app_dir() -> Path:
 
 def env_path() -> Path:
     override = os.environ.get(ENV_FILE_VAR, "").strip()
-    return Path(override) if override else app_dir() / ENV_FILE
+    if override:
+        return Path(override)
+    external = app_dir() / ENV_FILE
+    if external.exists() or not getattr(sys, "frozen", False):
+        return external
+    # A single-file build includes its server settings; a nearby .env overrides them.
+    return Path(__file__).resolve().parent.parent / ENV_FILE
 
 
 def load(path: Path | None = None) -> dict[str, str]:

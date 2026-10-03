@@ -1,0 +1,94 @@
+name: prozapas
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+  JWT_SECRET: ${JWT_SECRET}
+  APP_VERSION: ${APP_VERSION:-1.0.0}
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 192m
+    restart: unless-stopped
+
+  migrate:
+    image: prozapas-migrate:${APP_VERSION:-1.0.0}
+    build:
+      context: ../backend
+      dockerfile: database/Dockerfile
+    environment: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: [tools]
+
+  seed:
+    image: prozapas-migrate:${APP_VERSION:-1.0.0}
+    build:
+      context: ../backend
+      dockerfile: database/Dockerfile
+    entrypoint: [python, /app/seed_demo.py]
+    volumes:
+      - ./seed_demo.py:/app/seed_demo.py:ro
+      - ./demo-users.json:/app/demo-users.json:ro
+    environment:
+      <<: *app-env
+      ADMIN_LOGIN: admin
+      ADMIN_EMAIL: admin@prozapas.ru
+      SEED_PASSWORD: ${SEED_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: [tools]
+
+  api:
+    image: prozapas-api:${APP_VERSION:-1.0.0}
+    build:
+      context: ../backend
+      dockerfile: api/Dockerfile
+    environment: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8000/api/v1/health", timeout=3)']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    mem_limit: 256m
+    restart: unless-stopped
+
+  proxy:
+    image: caddy:2.11.4-alpine
+    environment:
+      API_HOST: ${API_HOST}
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    mem_limit: 128m
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

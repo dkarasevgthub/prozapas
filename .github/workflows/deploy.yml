@@ -1,0 +1,76 @@
+name: Deploy backend
+
+on:
+  push:
+    branches: [deploy]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prozapas-deployment
+  cancel-in-progress: false
+
+jobs:
+  test:
+    if: github.ref == 'refs/heads/deploy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: prozapas_user
+          POSTGRES_PASSWORD: ci-test-password
+          POSTGRES_DB: postgres
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U prozapas_user -d postgres"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Check deployment logic
+        run: python3 -m unittest discover -s deployment/tests -v
+      - name: Build API image
+        run: docker build -f backend/api/Dockerfile -t prozapas-ci backend
+      - name: Run API tests against isolated PostgreSQL
+        env:
+          TEST_DATABASE_URL: postgresql+psycopg://prozapas_user:ci-test-password@127.0.0.1:5432/prozapas_test
+        run: |
+          docker run --rm --network host -e TEST_DATABASE_URL \
+            -v "$PWD:/repo" -w /repo/backend prozapas-ci \
+            uv run --python /usr/local/bin/python --locked pytest -q
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DEPLOY_HOST: 185.196.117.2
+      DEPLOY_SHA: ${{ github.sha }}
+    steps:
+      - name: Configure restricted deployment key
+        env:
+          DEPLOY_KEY: ${{ secrets.PROZAPAS_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.PROZAPAS_KNOWN_HOSTS }}
+        run: |
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          install -d -m 700 "$RUNNER_TEMP/prozapas-ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/prozapas-ssh/key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/prozapas-ssh/known_hosts"
+          chmod 600 "$RUNNER_TEMP/prozapas-ssh/key"
+      - name: Deploy tested commit
+        run: |
+          ssh -p 22 -i "$RUNNER_TEMP/prozapas-ssh/key" \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$RUNNER_TEMP/prozapas-ssh/known_hosts" \
+            -o ServerAliveInterval=15 -o ServerAliveCountMax=6 \
+            "root@$DEPLOY_HOST" "deploy $DEPLOY_SHA"
+      - name: Verify public HTTPS API
+        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 "https://$DEPLOY_HOST/api/v1/health"
+      - name: Remove deployment credentials
+        if: always()
+        run: rm -f "$RUNNER_TEMP/prozapas-ssh/key" "$RUNNER_TEMP/prozapas-ssh/known_hosts"

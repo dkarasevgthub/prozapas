@@ -16,9 +16,9 @@ import sys
 import time
 from pathlib import Path
 
-from PyQt6.QtCore import QObject, QProcess
+from PyQt6.QtCore import QObject, QProcess, QProcessEnvironment
 
-from . import config, devices
+from . import config, devices, equipment
 
 #: Путь к службе можно задать снаружи — например, когда её ставят отдельно.
 SERVICE_DIR_ENV = "PROZAPAS_DEVICES_SERVICE"
@@ -108,7 +108,8 @@ class ServiceHost(QObject):
                 and self._process.state() != QProcess.ProcessState.NotRunning)
 
     def _spawn(self) -> bool:
-        path = service_dir()
+        frozen = getattr(sys, "frozen", False)
+        path = config.app_dir() if frozen else service_dir()
         if path is None:
             return False
         process = QProcess(self)
@@ -117,12 +118,29 @@ class ServiceHost(QObject):
         # нужен, а непрочитанный канал со временем переполняется и вешает её
         process.setStandardOutputFile(QProcess.nullDevice())
         process.setStandardErrorFile(QProcess.nullDevice())
-        process.setProgram(_python())
+        process.setProgram(sys.executable if frozen else _python())
+        environment = QProcessEnvironment.systemEnvironment()
+        environment.insert("PROZAPAS_PIPE_NAME", devices.PIPE_NAME)
+        for key in (
+            "PROZAPAS_SCANNER_PORT", "PROZAPAS_SCANNER_BAUD",
+            "PROZAPAS_SCALE_PORT", "PROZAPAS_SCALE_BAUD", "PROZAPAS_SCALE_STEP_G",
+            "PROZAPAS_PRINTER_NAME", "PROZAPAS_PRINTER_OUTPUT_FILE",
+            "PROZAPAS_LOG_LEVEL",
+        ):
+            value = config.get(key)
+            if value:
+                environment.insert(key, value)
+        printer_name = equipment.selected_printer()
+        if printer_name:
+            environment.insert("PROZAPAS_PRINTER_NAME", printer_name)
+        process.setProcessEnvironment(environment)
         # Тайм-аут простоя оставляем: если приложение упадёт, служба не
         # переживёт его надолго. Пока мы подключены, отсчёт не идёт, а после
         # симуляции её при необходимости поднимет ensure_running().
-        process.setArguments(
-            ["-m", "devices", "--idle-timeout", str(_IDLE_TIMEOUT_SEC)])
+        arguments = ["--devices-service"] if frozen else ["-m", "devices"]
+        if config.flag("PROZAPAS_SIMULATOR"):
+            arguments.append("--simulator-only")
+        process.setArguments(arguments + ["--idle-timeout", str(_IDLE_TIMEOUT_SEC)])
         process.start()
         if not process.waitForStarted(3000):
             return False

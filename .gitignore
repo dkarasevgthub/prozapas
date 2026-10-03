@@ -39,3 +39,7 @@ Thumbs.db
 .env
 backend/.env
 desktop/.env
+
+# Windows executable builds
+desktop/build/
+desktop/dist/

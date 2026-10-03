@@ -13,3 +13,8 @@ dependencies = [
 # An application, not a library: uv installs only the dependencies.
 [tool.uv]
 package = false
+
+[dependency-groups]
+build = [
+    "pyinstaller>=6.22,<7",
+]
