@@ -107,6 +107,7 @@ def form_dialog(parent, title, fields, on_save, submit_label="Сохранить
             w.setCurrentIndex(idx)
         else:
             w = QLineEdit(str(default))
+        w.setObjectName(f"form-{key}")
         v.addWidget(w)
         widgets[key] = (w, kind)
         r, c = divmod(i, columns)

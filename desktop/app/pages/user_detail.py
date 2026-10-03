@@ -206,8 +206,6 @@ class UserDetailPage(Page):
             ("warehouse_id", "Склад", "search-select",
              (user.get("warehouse") or {}).get("id"),
              [(w["id"], w["name"]) for w in reference.warehouses()]),
-            ("status", "Статус", "select", user["status"],
-             [("active", "Активен"), ("blocked", "Заблокирован")]),
             ("phone", "Телефон", "text", user.get("phone") or ""),
             ("email", "Email", "text", user["email"]),
         ]
@@ -219,7 +217,7 @@ class UserDetailPage(Page):
                 api.client.update_user(
                     user["id"], full_name=v["full_name"].strip(),
                     position=v["position"].strip(), role=v["role"],
-                    warehouse_id=v["warehouse_id"], status=v["status"],
+                    warehouse_id=v["warehouse_id"],
                     phone=v["phone"].strip(), email=v["email"].strip())
             except ApiError as exc:
                 return exc.title

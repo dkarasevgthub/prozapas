@@ -238,6 +238,7 @@ class Sidebar(QWidget):
         nav.setSpacing(2)
         for key, title, icon in NAV_ITEMS:
             row = NavRow(title, icon, active == key)
+            row.setProperty("route", key)
             row.clicked.connect(lambda k=key: self.navigate.emit(k))
             nav.addWidget(row)
         nav.addStretch(1)

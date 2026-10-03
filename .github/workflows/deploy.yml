@@ -44,14 +44,28 @@ jobs:
         run: |
           docker run --rm --network host -e TEST_DATABASE_URL \
             -v "$PWD:/repo" -w /repo/backend prozapas-ci \
-            uv run --python /usr/local/bin/python --locked pytest -q
+            uv run --python /usr/local/bin/python --locked pytest -q \
+              --junitxml=/repo/system-results/backend.xml \
+              --cov=api --cov=database --cov-branch \
+              --cov-fail-under=90 \
+              --cov-report=term --cov-report=xml:/repo/system-results/coverage.xml \
+              --cov-report=html:/repo/system-results/coverage-html
+      - name: Upload backend test results and coverage
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backend-test-results
+          path: system-results/
+          if-no-files-found: ignore
 
   desktop:
     name: Desktop tests
     runs-on: windows-latest
     timeout-minutes: 15
     env:
-      QT_QPA_PLATFORM: offscreen
+      QT_QPA_PLATFORM: windows
+      SYSTEM_DATABASE_URL: postgresql+psycopg://prozapas_user:ci-test-password@127.0.0.1:55432/prozapas_system_test
+      SYSTEM_TEST_ARTIFACTS: ${{ github.workspace }}/windows-system-results
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -64,16 +78,104 @@ jobs:
         run: |
           python -m pip install uv==0.12.0
           uv sync --locked
-      - name: Run desktop access and settings tests
+      - name: Run desktop and independent device contract tests
         working-directory: desktop
         run: |
           $env:APPDATA = Join-Path $env:RUNNER_TEMP 'prozapas-tests'
           $env:PYTHONPATH = $PWD.Path
           uv run --locked python -m unittest discover -s tests -v
+      - name: Start isolated PostgreSQL and install backend dependencies
+        run: |
+          uv sync --locked --directory backend
+          $pgData = Join-Path $env:RUNNER_TEMP 'prozapas-pg'
+          & "$env:PGBIN/initdb.exe" -D $pgData -U prozapas_user -A trust -E UTF8
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:PGBIN/pg_ctl.exe" -D $pgData -l "$env:RUNNER_TEMP/prozapas-pg.log" -o '-h 127.0.0.1 -p 55432' -w start
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run complete Windows UI workflows and concurrent HTTP transactions
+        run: backend/.venv/Scripts/python.exe deployment/run_system_tests.py
+      - name: Build Windows executable from locked dependencies
+        working-directory: desktop
+        run: |
+          "PROZAPAS_API=http://127.0.0.1:8000/api/v1`nPROZAPAS_SIMULATOR=true" | Set-Content -Encoding utf8 .env
+          uv run --locked --group build python build.py
+      - name: Test packaged device service from outside the executable
+        working-directory: desktop
+        run: |
+          $env:PYTHONPATH = $PWD.Path
+          $env:PROZAPAS_TEST_EXE = Join-Path $PWD 'dist/ProZapas.exe'
+          uv run --locked python -m unittest discover -s tests -p test_frozen_contract.py -v
+
+      - name: Stop isolated PostgreSQL
+        if: always()
+        run: |
+          $pgData = Join-Path $env:RUNNER_TEMP 'prozapas-pg'
+          if (Test-Path (Join-Path $pgData 'postmaster.pid')) {
+            & "$env:PGBIN/pg_ctl.exe" -D $pgData -m fast -w stop
+          }
+      - name: Upload Windows UI screenshots and API diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: windows-system-test-results
+          path: windows-system-results/
+          if-no-files-found: ignore
+
+  system:
+    name: System tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      QT_QPA_PLATFORM: offscreen
+      SYSTEM_DATABASE_URL: postgresql+psycopg://prozapas_user:ci-test-password@127.0.0.1:5432/prozapas_system_test
+      SYSTEM_TEST_ARTIFACTS: ${{ github.workspace }}/system-results
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: prozapas_user
+          POSTGRES_PASSWORD: ci-test-password
+          POSTGRES_DB: postgres
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U prozapas_user -d postgres"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Install Qt runtime and locked dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libegl1 libopengl0 libxkbcommon-x11-0 libxcb-cursor0
+          python -m pip install uv==0.12.0
+          (cd backend && uv sync --locked)
+          (cd desktop && uv sync --locked)
+      - name: Run real serial driver and independent device tests on Linux
+        working-directory: desktop
+        env:
+          PYTHONPATH: ${{ github.workspace }}/desktop:${{ github.workspace }}/desktop/tests
+        run: uv run --locked python -m unittest discover -s tests -v
+      - name: Run complete UI workflows and concurrent HTTP transactions
+        run: backend/.venv/bin/python deployment/run_system_tests.py
+      - name: Restore PostgreSQL backup and compare all tables
+        env:
+          PG_TEST_CONTAINER: ${{ job.services.postgres.id }}
+        run: backend/.venv/bin/python deployment/check_backup_restore.py
+      - name: Upload UI screenshots and API diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: system-test-results
+          path: system-results/
+          if-no-files-found: ignore
 
   deploy:
     name: Promote and deploy
-    needs: [backend, desktop]
+    needs: [backend, desktop, system]
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/deploy')
     runs-on: ubuntu-latest
     timeout-minutes: 20

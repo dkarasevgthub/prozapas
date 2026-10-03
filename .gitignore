@@ -43,3 +43,6 @@ desktop/.env
 # Windows executable builds
 desktop/build/
 desktop/dist/
+# Local CI diagnostics and GUI screenshots.
+system-results/
+windows-system-results/

@@ -169,7 +169,7 @@ class Resources:
     def create_item(self, article: str, name: str, unit: str, *,
                     code1c: str = "", unit_weight: float = 0):
         return self.t.post("/catalog", {"article": article, "name": name,
-                                        "unit": unit, "code1c": code1c,
+                                        "unit": unit, "code1c": code1c or None,
                                         "unit_weight": unit_weight})
 
     def import_catalog(self, raw: bytes):
@@ -187,6 +187,8 @@ class Resources:
         return self.t.get(f"/catalog/{item_id}")
 
     def update_item(self, item_id: int, **fields):
+        if fields.get("code1c") == "":
+            fields["code1c"] = None
         return self.t.patch(f"/catalog/{item_id}", fields)
 
     def archive_item(self, item_id: int):
