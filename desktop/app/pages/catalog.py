@@ -6,6 +6,7 @@ from ..api.errors import ApiError
 from ..widgets.common import breadcrumb, button
 from ..widgets.dialog import form_dialog
 from ..widgets.table import TableSection
+from . import _exchange
 from ._ui import header_row, labeled_field, search_field
 from .base import Page
 
@@ -21,7 +22,9 @@ class CatalogPage(Page):
         self.add_block(header_row(
             "Справочник",
             "Номенклатура завода · материалы, комплектующие, готовая продукция",
-            add))
+            _exchange.toolbar(self, section="catalog",
+                              on_import=self._import, on_export=self._export,
+                              extra=add)))
 
         row = QHBoxLayout()
         row.setSpacing(theme.SP4)
@@ -97,3 +100,9 @@ class CatalogPage(Page):
             return None
 
         form_dialog(self, "Добавить позицию", fields, on_save, submit_label="Добавить")
+
+    def _import(self):
+        _exchange.load(self, api.client.import_catalog, self._refresh)
+
+    def _export(self):
+        _exchange.save(self, api.client.export_catalog, "import.xml")

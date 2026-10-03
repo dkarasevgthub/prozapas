@@ -3,6 +3,7 @@ from .. import api, fmt
 from ..api.errors import ApiError
 from ..widgets.common import breadcrumb
 from ..widgets.table import TableSection
+from . import _exchange
 from ._ui import header_row, search_field, stat_grid
 from .base import Page
 
@@ -12,7 +13,10 @@ class StockPage(Page):
         self._search = ""
 
         self.add_block(breadcrumb("ProЗапас / Остатки"))
-        self.add_block(header_row("Остатки", "Складские остатки по номенклатуре"))
+        self.add_block(header_row(
+            "Остатки", "Складские остатки по номенклатуре",
+            _exchange.toolbar(self, section="stock",
+                              on_import=self._import, on_export=self._export)))
 
         self._stats = stat_grid(self._summary(), columns=4)
         self.add_block(self._stats)
@@ -73,3 +77,12 @@ class StockPage(Page):
                   ("m", fmt.qty(r["reserved"]))], r["item_id"])
                 for r in payload["items"]]
         self._table.set_rows(rows, total=payload["total"], keep_page=True)
+
+    def _import(self):
+        # Перечитываем страницу целиком, а не только таблицу: карточки сводки
+        # собираются один раз при построении, и после загрузки они бы врали.
+        _exchange.load(self, api.client.import_stock,
+                       lambda: self.nav.go("stock"))
+
+    def _export(self):
+        _exchange.save(self, api.client.export_stock, "offers.xml")

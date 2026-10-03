@@ -11,7 +11,9 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
 from . import errors
-from .routers import auth, service
+from .routers import (auth, catalog, orders, receiving, service, shipping,
+                      stock, users)
+from .schemas.common import Problem
 
 PREFIX = "/api/v1"
 
@@ -31,16 +33,17 @@ app = FastAPI(
 
 errors.install(app)
 
-for module in (service, auth):
-    app.include_router(module.router, prefix=PREFIX)
+# Errors are declared once for every route so that OpenAPI carries the
+# Problem schema from docs/openapi.json (api.md §3.3).
+PROBLEMS = {code: {"model": Problem} for code in (400, 401, 403, 404, 409, 422)}
+
+for module in (service, auth, catalog, orders, shipping, receiving, stock,
+               users):
+    app.include_router(module.router, prefix=PREFIX, responses=PROBLEMS)
 
 
 def openapi() -> dict:
-    """Схема с `servers`, как в docs/openapi.json.
-
-    FastAPI пишет пути вместе с префиксом, а в контракте они относительные —
-    иначе сверка двух файлов давала бы разницу на каждом эндпоинте.
-    """
+    """Схема с `servers`, как в docs/openapi.json."""
     if app.openapi_schema:
         return app.openapi_schema
     schema = get_openapi(title=app.title, version=app.version,

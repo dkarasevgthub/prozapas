@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
 )
 
 from .. import devices, theme
+from ..session import session
 from .common import button
 
 #: Открытое окно. Ссылку держим сами: у окна нет родителя, и без неё сборщик
@@ -32,6 +33,8 @@ class DeviceLogWindow(QWidget):
     """Живой журнал кадров протокола в обе стороны."""
 
     def __init__(self):
+        if not session.is_admin:
+            raise PermissionError("Журнал устройств доступен только администратору.")
         super().__init__()          # без родителя — самостоятельное окно
         self.setWindowTitle("ProЗапас — обмен со службой устройств")
         self.setWindowFlag(Qt.WindowType.Window, True)
@@ -148,9 +151,18 @@ class DeviceLogWindow(QWidget):
 def show_device_log():
     """Открыть журнал или поднять уже открытый."""
     global _window
+    if not session.is_admin:
+        close_device_log()
+        return None
     if _window is None:
         _window = DeviceLogWindow()
     _window.show()
     _window.raise_()
     _window.activateWindow()
     return _window
+
+
+def close_device_log():
+    """Close an administrator's log when leaving their session."""
+    if _window is not None:
+        _window.close()

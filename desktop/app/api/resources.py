@@ -9,7 +9,7 @@
 """
 from __future__ import annotations
 
-from .transport import Transport, new_idempotency_key
+from .transport import EXCHANGE_TIMEOUT, XML, Transport, new_idempotency_key
 
 
 class Resources:
@@ -143,6 +143,17 @@ class Resources:
         return self.t.get(f"/stock/{item_id}/movements", type=type,
                           limit=limit, offset=offset)
 
+    def import_stock(self, raw: bytes):
+        """offers.xml → инвентаризация своего склада. Файл идёт телом как есть."""
+        return self.t.request("POST", "/stock/import", raw=raw, content_type=XML,
+                              timeout=EXCHANGE_TIMEOUT)
+
+    def export_stock(self, *, warehouse_id: int | None = None) -> bytes:
+        """Остатки → offers.xml. Возвращает файл байтами, а не JSON."""
+        return self.t.request("GET", "/stock/export",
+                              params={"warehouse_id": warehouse_id},
+                              accept=XML, timeout=EXCHANGE_TIMEOUT)
+
     def stock_operation(self, article: str, warehouse_id: int, type: str,
                         qty: float, comment: str = ""):
         """Для recount qty — новое значение остатка, а не дельта."""
@@ -160,6 +171,17 @@ class Resources:
         return self.t.post("/catalog", {"article": article, "name": name,
                                         "unit": unit, "code1c": code1c,
                                         "unit_weight": unit_weight})
+
+    def import_catalog(self, raw: bytes):
+        """import.xml → номенклатура. Файл идёт телом как есть."""
+        return self.t.request("POST", "/catalog/import", raw=raw, content_type=XML,
+                              timeout=EXCHANGE_TIMEOUT)
+
+    def export_catalog(self, *, archived: bool = False) -> bytes:
+        """Номенклатура → import.xml. Возвращает файл байтами, а не JSON."""
+        return self.t.request("GET", "/catalog/export",
+                              params={"archived": archived},
+                              accept=XML, timeout=EXCHANGE_TIMEOUT)
 
     def item(self, item_id: int):
         return self.t.get(f"/catalog/{item_id}")

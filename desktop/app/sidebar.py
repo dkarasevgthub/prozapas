@@ -19,6 +19,7 @@ from . import devices, theme
 from .session import session
 from .widgets.common import button, svg_pixmap
 from .widgets.devicelog import show_device_log
+from .widgets.printer_settings import show_printer_settings
 
 NAV_ITEMS = [
     ("home", "Главная", "home"),
@@ -268,12 +269,20 @@ class Sidebar(QWidget):
         devices.bus.changed.connect(self._refresh_devices)
         self._refresh_devices()
 
+        if session.is_admin:
+            settings = button("Настроить принтер", "ghost")
+            settings.setObjectName("printerSettingsButton")
+            settings.clicked.connect(lambda: show_printer_settings(self.window()))
+            lay.addWidget(settings)
+
         # Журнал обмена: единственный способ увидеть из приложения, шлёт ли
         # подключённое железо хоть что-нибудь. Открывается отдельным окном,
         # чтобы приложением можно было пользоваться с ним параллельно.
-        logs = button("Логи", "ghost")
-        logs.clicked.connect(lambda: show_device_log())
-        lay.addWidget(logs)
+        if session.is_admin:
+            logs = button("Логи", "ghost")
+            logs.setObjectName("deviceLogsButton")
+            logs.clicked.connect(lambda: show_device_log())
+            lay.addWidget(logs)
 
         lay.addSpacing(theme.SP2)
         v = QLabel("Версия 1.0")

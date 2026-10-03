@@ -1,0 +1,119 @@
+name: CI and deployment
+
+on:
+  push:
+    branches: [dev, main, deploy]
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prozapas-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: prozapas_user
+          POSTGRES_PASSWORD: ci-test-password
+          POSTGRES_DB: postgres
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U prozapas_user -d postgres"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Check deployment logic
+        run: python3 -m unittest discover -s deployment/tests -v
+      - name: Build API image
+        run: docker build -f backend/api/Dockerfile -t prozapas-ci backend
+      - name: Run API tests against isolated PostgreSQL
+        env:
+          TEST_DATABASE_URL: postgresql+psycopg://prozapas_user:ci-test-password@127.0.0.1:5432/prozapas_test
+        run: |
+          docker run --rm --network host -e TEST_DATABASE_URL \
+            -v "$PWD:/repo" -w /repo/backend prozapas-ci \
+            uv run --python /usr/local/bin/python --locked pytest -q
+
+  desktop:
+    name: Desktop tests
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: |
+          python -m pip install uv==0.12.0
+          uv sync --locked
+      - name: Run desktop access and settings tests
+        working-directory: desktop
+        run: |
+          $env:APPDATA = Join-Path $env:RUNNER_TEMP 'prozapas-tests'
+          $env:PYTHONPATH = $PWD.Path
+          uv run --locked python -m unittest discover -s tests -v
+
+  deploy:
+    name: Promote and deploy
+    needs: [backend, desktop]
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/deploy')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    concurrency:
+      group: prozapas-production
+      cancel-in-progress: false
+    env:
+      DEPLOY_HOST: 185.196.117.2
+      DEPLOY_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+      - name: Promote tested main to deploy
+        id: promote
+        run: python3 deployment/promote.py
+      - name: Configure restricted deployment key
+        if: steps.promote.outputs.ready == 'true'
+        env:
+          DEPLOY_KEY: ${{ secrets.PROZAPAS_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.PROZAPAS_KNOWN_HOSTS }}
+        run: |
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          install -d -m 700 "$RUNNER_TEMP/prozapas-ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/prozapas-ssh/key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/prozapas-ssh/known_hosts"
+          chmod 600 "$RUNNER_TEMP/prozapas-ssh/key"
+      - name: Deploy tested commit
+        if: steps.promote.outputs.ready == 'true'
+        run: |
+          ssh -p 22 -i "$RUNNER_TEMP/prozapas-ssh/key" \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$RUNNER_TEMP/prozapas-ssh/known_hosts" \
+            -o ServerAliveInterval=15 -o ServerAliveCountMax=6 \
+            "root@$DEPLOY_HOST" "deploy $DEPLOY_SHA"
+      - name: Verify public HTTPS API
+        if: steps.promote.outputs.ready == 'true'
+        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 "https://$DEPLOY_HOST/api/v1/health"
+      - name: Remove deployment credentials
+        if: always()
+        run: rm -f "$RUNNER_TEMP/prozapas-ssh/key" "$RUNNER_TEMP/prozapas-ssh/known_hosts"

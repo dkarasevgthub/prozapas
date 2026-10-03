@@ -1,4 +1,5 @@
 """Modal dialogs styled after the design's .dialog component."""
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -27,7 +28,7 @@ def _style_dialog(dlg):
 
 def confirm_dialog(parent, title, body, confirm_label="Подтвердить", cancel_label="Отмена"):
     dlg = QDialog(parent)
-    dlg.setModal(True)
+    dlg.setWindowModality(Qt.WindowModality.WindowModal)
     dlg.setWindowTitle(title)
     _style_dialog(dlg)
     lay = QVBoxLayout(dlg)
@@ -45,11 +46,14 @@ def confirm_dialog(parent, title, body, confirm_label="Подтвердить", 
 
     actions = QHBoxLayout()
     actions.addStretch(1)
-    cancel = button(cancel_label, "secondary")
-    cancel.clicked.connect(dlg.reject)
+    # Пустая подпись — окно-сообщение, отменять в нём нечего. Раньше кнопка всё
+    # равно создавалась и висела пустым прямоугольником рядом с «Понятно».
+    if cancel_label:
+        cancel = button(cancel_label, "secondary")
+        cancel.clicked.connect(dlg.reject)
+        actions.addWidget(cancel)
     ok = button(confirm_label, "primary")
     ok.clicked.connect(dlg.accept)
-    actions.addWidget(cancel)
     actions.addWidget(ok)
     lay.addSpacing(theme.SP2)
     lay.addLayout(actions)
@@ -65,7 +69,7 @@ def form_dialog(parent, title, fields, on_save, submit_label="Сохранить
     search box). on_save(values)->error_str|None. Returns True on save.
     """
     dlg = QDialog(parent)
-    dlg.setModal(True)
+    dlg.setWindowModality(Qt.WindowModality.WindowModal)
     dlg.setWindowTitle(title)
     _style_dialog(dlg)
     lay = QVBoxLayout(dlg)

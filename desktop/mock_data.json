@@ -1,0 +1,2216 @@
+{
+  "version": 2,
+  "reference": {
+    "warehouseCode": "128",
+    "warehouses": [
+      {
+        "name": "Склад №1",
+        "responsible": "Соколов П.Н."
+      },
+      {
+        "name": "Склад №3",
+        "responsible": "Морозова Е.В."
+      },
+      {
+        "name": "Склад №4",
+        "responsible": "Титов Р.А."
+      },
+      {
+        "name": "Центральный склад",
+        "responsible": "Волкова М.С."
+      }
+    ],
+    "roles": [
+      {
+        "id": "manager",
+        "label": "Менеджер"
+      },
+      {
+        "id": "stockman",
+        "label": "Кладовщик"
+      },
+      {
+        "id": "admin",
+        "label": "Администратор"
+      }
+    ],
+    "sections": [
+      {
+        "id": "orders",
+        "label": "Заказы"
+      },
+      {
+        "id": "shipping",
+        "label": "Отгрузка"
+      },
+      {
+        "id": "receiving",
+        "label": "Приёмка"
+      },
+      {
+        "id": "catalog",
+        "label": "Справочник"
+      },
+      {
+        "id": "stock",
+        "label": "Остатки"
+      },
+      {
+        "id": "users",
+        "label": "Пользователи"
+      }
+    ],
+    "catalog": [
+      {
+        "code1c": "ТМЦ-00421",
+        "article": "100421",
+        "name": "Болт М8×40 ГОСТ 7798",
+        "unit": "шт.",
+        "unitWeight": 0.02
+      },
+      {
+        "code1c": "ТМЦ-00433",
+        "article": "100433",
+        "name": "Гайка М8 ГОСТ 5915",
+        "unit": "шт.",
+        "unitWeight": 0.01
+      },
+      {
+        "code1c": "ТМЦ-01187",
+        "article": "201187",
+        "name": "Подшипник 6205-2RS",
+        "unit": "шт.",
+        "unitWeight": 0.08
+      },
+      {
+        "code1c": "ТМЦ-01204",
+        "article": "201204",
+        "name": "Ремень приводной А-1250",
+        "unit": "шт.",
+        "unitWeight": 0.45
+      },
+      {
+        "code1c": "ТМЦ-00087",
+        "article": "300087",
+        "name": "Редуктор РЦД-350 в сборе",
+        "unit": "шт.",
+        "unitWeight": 42.0
+      },
+      {
+        "code1c": "ТМЦ-00091",
+        "article": "300091",
+        "name": "Насос центробежный НЦ-40",
+        "unit": "шт.",
+        "unitWeight": 18.5
+      },
+      {
+        "code1c": "ТМЦ-00458",
+        "article": "100458",
+        "name": "Лист стальной 2×1250×2500",
+        "unit": "лист",
+        "unitWeight": 72.5
+      },
+      {
+        "code1c": "ТМЦ-00477",
+        "article": "100477",
+        "name": "Уголок стальной 50×50×5",
+        "unit": "шт.",
+        "unitWeight": 4.5
+      },
+      {
+        "code1c": "ТМЦ-00512",
+        "article": "100512",
+        "name": "Труба стальная 32×2",
+        "unit": "м",
+        "unitWeight": 1.6
+      },
+      {
+        "code1c": "ТМЦ-00098",
+        "article": "300098",
+        "name": "Электродвигатель АИР90",
+        "unit": "шт.",
+        "unitWeight": 24.0
+      },
+      {
+        "code1c": "ТМЦ-01340",
+        "article": "201340",
+        "name": "Ремень клиновой Б-1400",
+        "unit": "шт.",
+        "unitWeight": 0.35
+      },
+      {
+        "code1c": "ТМЦ-00655",
+        "article": "100655",
+        "name": "Шайба М8 ГОСТ 6402",
+        "unit": "шт.",
+        "unitWeight": 0.005
+      },
+      {
+        "code1c": "ТМЦ-00701",
+        "article": "100701",
+        "name": "Винт М6×20 ГОСТ 17475",
+        "unit": "шт.",
+        "unitWeight": 0.008
+      },
+      {
+        "code1c": "ТМЦ-01412",
+        "article": "201412",
+        "name": "Подшипник 6208-2RS",
+        "unit": "шт.",
+        "unitWeight": 0.15
+      },
+      {
+        "code1c": "ТМЦ-00133",
+        "article": "300133",
+        "name": "Насос шестерённый НШ-10",
+        "unit": "шт.",
+        "unitWeight": 6.2
+      },
+      {
+        "code1c": "ТМЦ-00812",
+        "article": "100812",
+        "name": "Швеллер 10П ГОСТ 8240",
+        "unit": "м",
+        "unitWeight": 8.5
+      },
+      {
+        "code1c": "ТМЦ-00159",
+        "article": "300159",
+        "name": "Редуктор червячный РЧУ-125",
+        "unit": "шт.",
+        "unitWeight": 18.7
+      },
+      {
+        "code1c": "ТМЦ-00933",
+        "article": "100933",
+        "name": "Гайка М10 ГОСТ 5915",
+        "unit": "шт.",
+        "unitWeight": 0.015
+      },
+      {
+        "code1c": "ТМЦ-01055",
+        "article": "201055",
+        "name": "Муфта соединительная МУВП-40",
+        "unit": "шт.",
+        "unitWeight": 2.1
+      },
+      {
+        "code1c": "ТМЦ-00950",
+        "article": "100950",
+        "name": "Шпонка 8×7×40",
+        "unit": "шт.",
+        "unitWeight": 0.03
+      },
+      {
+        "code1c": "ТМЦ-01600",
+        "article": "201600",
+        "name": "Цепь приводная ПР-19.05",
+        "unit": "м",
+        "unitWeight": 1.9
+      },
+      {
+        "code1c": "ТМЦ-00210",
+        "article": "300210",
+        "name": "Компрессор поршневой К-25",
+        "unit": "шт.",
+        "unitWeight": 55.0
+      }
+    ]
+  },
+  "stock": [
+    {
+      "article": "100421",
+      "byWarehouse": {
+        "Склад №1": 800,
+        "Склад №4": 150
+      },
+      "reserved": 300,
+      "minQty": 50
+    },
+    {
+      "article": "100433",
+      "byWarehouse": {
+        "Склад №3": 600
+      },
+      "reserved": 0,
+      "minQty": 50
+    },
+    {
+      "article": "201187",
+      "byWarehouse": {
+        "Склад №1": 12,
+        "Склад №4": 30
+      },
+      "reserved": 20,
+      "minQty": 5
+    },
+    {
+      "article": "201204",
+      "byWarehouse": {
+        "Склад №3": 25,
+        "Склад №4": 8
+      },
+      "reserved": 12,
+      "minQty": 5
+    },
+    {
+      "article": "300087",
+      "byWarehouse": {
+        "Центральный склад": 3
+      },
+      "reserved": 3,
+      "minQty": 5
+    },
+    {
+      "article": "300091",
+      "byWarehouse": {
+        "Центральный склад": 11
+      },
+      "reserved": 4,
+      "minQty": 5
+    },
+    {
+      "article": "100458",
+      "byWarehouse": {
+        "Склад №3": 6,
+        "Центральный склад": 10
+      },
+      "reserved": 0,
+      "minQty": 5
+    },
+    {
+      "article": "100477",
+      "byWarehouse": {
+        "Склад №1": 40,
+        "Центральный склад": 60
+      },
+      "reserved": 30,
+      "minQty": 50
+    },
+    {
+      "article": "100512",
+      "byWarehouse": {
+        "Склад №3": 120,
+        "Центральный склад": 200
+      },
+      "reserved": 0,
+      "minQty": 50
+    },
+    {
+      "article": "300098",
+      "byWarehouse": {
+        "Склад №1": 3,
+        "Склад №4": 2,
+        "Центральный склад": 6
+      },
+      "reserved": 2,
+      "minQty": 5
+    },
+    {
+      "article": "201340",
+      "byWarehouse": {
+        "Склад №1": 54,
+        "Склад №4": 12
+      },
+      "reserved": 0,
+      "minQty": 5
+    },
+    {
+      "article": "100655",
+      "byWarehouse": {
+        "Склад №3": 3200,
+        "Центральный склад": 1800
+      },
+      "reserved": 0,
+      "minQty": 500
+    },
+    {
+      "article": "100701",
+      "byWarehouse": {
+        "Склад №1": 900,
+        "Склад №4": 400
+      },
+      "reserved": 200,
+      "minQty": 500
+    },
+    {
+      "article": "201412",
+      "byWarehouse": {
+        "Склад №3": 18,
+        "Склад №4": 10
+      },
+      "reserved": 12,
+      "minQty": 5
+    },
+    {
+      "article": "300133",
+      "byWarehouse": {
+        "Склад №1": 4,
+        "Склад №4": 3,
+        "Центральный склад": 5
+      },
+      "reserved": 3,
+      "minQty": 5
+    },
+    {
+      "article": "100812",
+      "byWarehouse": {
+        "Склад №3": 40,
+        "Центральный склад": 60
+      },
+      "reserved": 0,
+      "minQty": 50
+    },
+    {
+      "article": "300159",
+      "byWarehouse": {
+        "Склад №1": 2,
+        "Склад №4": 1,
+        "Центральный склад": 3
+      },
+      "reserved": 2,
+      "minQty": 5
+    },
+    {
+      "article": "100933",
+      "byWarehouse": {
+        "Склад №3": 1500,
+        "Центральный склад": 900
+      },
+      "reserved": 0,
+      "minQty": 500
+    },
+    {
+      "article": "201055",
+      "byWarehouse": {
+        "Склад №1": 6,
+        "Склад №4": 4,
+        "Центральный склад": 8
+      },
+      "reserved": 4,
+      "minQty": 5
+    },
+    {
+      "article": "100950",
+      "byWarehouse": {
+        "Склад №3": 220,
+        "Центральный склад": 150
+      },
+      "reserved": 0,
+      "minQty": 50
+    },
+    {
+      "article": "201600",
+      "byWarehouse": {
+        "Склад №3": 30,
+        "Склад №4": 20
+      },
+      "reserved": 0,
+      "minQty": 5
+    },
+    {
+      "article": "300210",
+      "byWarehouse": {
+        "Склад №1": 1,
+        "Центральный склад": 2
+      },
+      "reserved": 0,
+      "minQty": 5
+    }
+  ],
+  "orders": [
+    {
+      "id": 1,
+      "number": "2001",
+      "direction": "ours",
+      "status": "created",
+      "counterpartyWarehouse": "Склад №1",
+      "counterpartyResponsible": "Соколов П.Н.",
+      "createdDateTime": "21.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100421",
+          "qty": 500
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "21.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "number": "2002",
+      "direction": "ours",
+      "status": "processing",
+      "counterpartyWarehouse": "Склад №3",
+      "counterpartyResponsible": "Морозова Е.В.",
+      "createdDateTime": "19.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "201187",
+          "qty": 20
+        },
+        {
+          "article": "201204",
+          "qty": 15
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "19.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "19.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "number": "2003",
+      "direction": "ours",
+      "status": "processing",
+      "counterpartyWarehouse": "Центральный склад",
+      "counterpartyResponsible": "Волкова М.С.",
+      "createdDateTime": "17.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100458",
+          "qty": 4
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "17.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "17.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "number": "2004",
+      "direction": "ours",
+      "status": "received",
+      "counterpartyWarehouse": "Склад №4",
+      "counterpartyResponsible": "Титов Р.А.",
+      "createdDateTime": "14.07.2026 09:00",
+      "shipDateTime": "15.07.2026 12:00",
+      "acceptedAt": "16.07.2026 10:30",
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100477",
+          "qty": 30
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "14.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "14.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "15.07.2026 12:00"
+        },
+        {
+          "status": "received",
+          "dateTime": "16.07.2026 10:30"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "number": "2005",
+      "direction": "ours",
+      "status": "created",
+      "counterpartyWarehouse": "Центральный склад",
+      "counterpartyResponsible": "Волкова М.С.",
+      "createdDateTime": "22.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "201412",
+          "qty": 25
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "22.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "number": "2006",
+      "direction": "ours",
+      "status": "processing",
+      "counterpartyWarehouse": "Склад №1",
+      "counterpartyResponsible": "Соколов П.Н.",
+      "createdDateTime": "20.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100433",
+          "qty": 300
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "20.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "20.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "number": "2007",
+      "direction": "ours",
+      "status": "received",
+      "counterpartyWarehouse": "Склад №3",
+      "counterpartyResponsible": "Морозова Е.В.",
+      "createdDateTime": "12.07.2026 09:00",
+      "shipDateTime": "13.07.2026 12:00",
+      "acceptedAt": "14.07.2026 10:30",
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100512",
+          "qty": 60
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "12.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "12.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "13.07.2026 12:00"
+        },
+        {
+          "status": "received",
+          "dateTime": "14.07.2026 10:30"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "number": "2008",
+      "direction": "ours",
+      "status": "created",
+      "counterpartyWarehouse": "Склад №4",
+      "counterpartyResponsible": "Титов Р.А.",
+      "createdDateTime": "22.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "300098",
+          "qty": 2
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "22.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "number": "2009",
+      "direction": "ours",
+      "status": "declined",
+      "counterpartyWarehouse": "Центральный склад",
+      "counterpartyResponsible": "Волкова М.С.",
+      "createdDateTime": "16.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100421",
+          "qty": 200
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "16.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "16.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "number": "2010",
+      "direction": "ours",
+      "status": "cancelled",
+      "counterpartyWarehouse": "Склад №1",
+      "counterpartyResponsible": "Соколов П.Н.",
+      "createdDateTime": "18.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "201204",
+          "qty": 12
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "18.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "18.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "number": "2011",
+      "direction": "ours",
+      "status": "processing",
+      "counterpartyWarehouse": "Склад №3",
+      "counterpartyResponsible": "Морозова Е.В.",
+      "createdDateTime": "21.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100477",
+          "qty": 25
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "21.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "21.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "number": "2012",
+      "direction": "ours",
+      "status": "received",
+      "counterpartyWarehouse": "Склад №4",
+      "counterpartyResponsible": "Титов Р.А.",
+      "createdDateTime": "10.07.2026 09:00",
+      "shipDateTime": "11.07.2026 12:00",
+      "acceptedAt": "12.07.2026 10:30",
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "201187",
+          "qty": 8
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "10.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "10.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "11.07.2026 12:00"
+        },
+        {
+          "status": "received",
+          "dateTime": "12.07.2026 10:30"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "number": "2013",
+      "direction": "ours",
+      "status": "created",
+      "counterpartyWarehouse": "Склад №1",
+      "counterpartyResponsible": "Соколов П.Н.",
+      "createdDateTime": "22.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100458",
+          "qty": 3
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "22.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "number": "2014",
+      "direction": "ours",
+      "status": "processing",
+      "counterpartyWarehouse": "Центральный склад",
+      "counterpartyResponsible": "Волкова М.С.",
+      "createdDateTime": "19.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100433",
+          "qty": 150
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "19.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "19.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "number": "2015",
+      "direction": "ours",
+      "status": "received",
+      "counterpartyWarehouse": "Склад №3",
+      "counterpartyResponsible": "Морозова Е.В.",
+      "createdDateTime": "13.07.2026 09:00",
+      "shipDateTime": "14.07.2026 12:00",
+      "acceptedAt": "15.07.2026 10:30",
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "300098",
+          "qty": 1
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "13.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "13.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "14.07.2026 12:00"
+        },
+        {
+          "status": "received",
+          "dateTime": "15.07.2026 10:30"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "number": "3001",
+      "direction": "theirs",
+      "status": "created",
+      "counterpartyWarehouse": "Склад №3",
+      "counterpartyResponsible": "Морозова Е.В.",
+      "createdDateTime": "22.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100433",
+          "qty": 200
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "22.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "number": "3002",
+      "direction": "theirs",
+      "status": "processing",
+      "counterpartyWarehouse": "Склад №1",
+      "counterpartyResponsible": "Соколов П.Н.",
+      "createdDateTime": "20.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100512",
+          "qty": 40
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "20.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "20.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "number": "3003",
+      "direction": "theirs",
+      "status": "shipped",
+      "counterpartyWarehouse": "Центральный склад",
+      "counterpartyResponsible": "Волкова М.С.",
+      "createdDateTime": "18.07.2026 09:00",
+      "shipDateTime": "19.07.2026 12:00",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "300098",
+          "qty": 2
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "18.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "18.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "19.07.2026 12:00"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "number": "3004",
+      "direction": "theirs",
+      "status": "received",
+      "counterpartyWarehouse": "Склад №4",
+      "counterpartyResponsible": "Титов Р.А.",
+      "createdDateTime": "16.07.2026 09:00",
+      "shipDateTime": "17.07.2026 12:00",
+      "acceptedAt": "18.07.2026 10:30",
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100655",
+          "qty": 800
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "16.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "16.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "17.07.2026 12:00"
+        },
+        {
+          "status": "received",
+          "dateTime": "18.07.2026 10:30"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "number": "3005",
+      "direction": "theirs",
+      "status": "created",
+      "counterpartyWarehouse": "Склад №1",
+      "counterpartyResponsible": "Соколов П.Н.",
+      "createdDateTime": "22.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "201204",
+          "qty": 10
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "22.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "number": "3006",
+      "direction": "theirs",
+      "status": "processing",
+      "counterpartyWarehouse": "Склад №3",
+      "counterpartyResponsible": "Морозова Е.В.",
+      "createdDateTime": "21.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100421",
+          "qty": 400
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "21.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "21.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "number": "3007",
+      "direction": "theirs",
+      "status": "shipped",
+      "counterpartyWarehouse": "Склад №4",
+      "counterpartyResponsible": "Титов Р.А.",
+      "createdDateTime": "19.07.2026 09:00",
+      "shipDateTime": "20.07.2026 12:00",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "201187",
+          "qty": 15
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "19.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "19.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "20.07.2026 12:00"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "number": "3008",
+      "direction": "theirs",
+      "status": "received",
+      "counterpartyWarehouse": "Центральный склад",
+      "counterpartyResponsible": "Волкова М.С.",
+      "createdDateTime": "14.07.2026 09:00",
+      "shipDateTime": "15.07.2026 12:00",
+      "acceptedAt": "16.07.2026 10:30",
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100477",
+          "qty": 20
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "14.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "14.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "15.07.2026 12:00"
+        },
+        {
+          "status": "received",
+          "dateTime": "16.07.2026 10:30"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "number": "3009",
+      "direction": "theirs",
+      "status": "processing",
+      "counterpartyWarehouse": "Склад №1",
+      "counterpartyResponsible": "Соколов П.Н.",
+      "createdDateTime": "22.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100458",
+          "qty": 5
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "22.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "01.08.2026 20:45"
+        }
+      ],
+      "packedIndexes": [],
+      "pickStartedAt": "01.08.2026 20:45",
+      "pickResponsible": "Ковалёв Д.С."
+    },
+    {
+      "id": 25,
+      "number": "3010",
+      "direction": "theirs",
+      "status": "declined",
+      "counterpartyWarehouse": "Склад №3",
+      "counterpartyResponsible": "Морозова Е.В.",
+      "createdDateTime": "17.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "201412",
+          "qty": 30
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "17.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "17.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "number": "3011",
+      "direction": "theirs",
+      "status": "processing",
+      "counterpartyWarehouse": "Склад №4",
+      "counterpartyResponsible": "Титов Р.А.",
+      "createdDateTime": "20.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100512",
+          "qty": 90
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "20.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "20.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "number": "3012",
+      "direction": "theirs",
+      "status": "shipped",
+      "counterpartyWarehouse": "Центральный склад",
+      "counterpartyResponsible": "Волкова М.С.",
+      "createdDateTime": "18.07.2026 09:00",
+      "shipDateTime": "19.07.2026 12:00",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100433",
+          "qty": 500
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "18.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "18.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "19.07.2026 12:00"
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "number": "3013",
+      "direction": "theirs",
+      "status": "received",
+      "counterpartyWarehouse": "Склад №1",
+      "counterpartyResponsible": "Соколов П.Н.",
+      "createdDateTime": "11.07.2026 09:00",
+      "shipDateTime": "12.07.2026 12:00",
+      "acceptedAt": "13.07.2026 10:30",
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "300098",
+          "qty": 3
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "11.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "11.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "12.07.2026 12:00"
+        },
+        {
+          "status": "received",
+          "dateTime": "13.07.2026 10:30"
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "number": "3014",
+      "direction": "theirs",
+      "status": "processing",
+      "counterpartyWarehouse": "Склад №3",
+      "counterpartyResponsible": "Морозова Е.В.",
+      "createdDateTime": "22.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "201204",
+          "qty": 18
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "22.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "30.07.2026 13:07"
+        }
+      ],
+      "packedIndexes": [],
+      "pickStartedAt": "30.07.2026 13:07",
+      "pickResponsible": "Егорова Н.И."
+    },
+    {
+      "id": 30,
+      "number": "3015",
+      "direction": "theirs",
+      "status": "processing",
+      "counterpartyWarehouse": "Склад №4",
+      "counterpartyResponsible": "Титов Р.А.",
+      "createdDateTime": "21.07.2026 09:00",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100421",
+          "qty": 250
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "21.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "21.07.2026 09:00"
+        }
+      ]
+    },
+    {
+      "id": 60,
+      "number": "3026",
+      "direction": "theirs",
+      "status": "shipped",
+      "counterpartyWarehouse": "Склад №1",
+      "counterpartyResponsible": "Соколов П.Н.",
+      "createdDateTime": "21.07.2026 09:00",
+      "shipDateTime": "01.08.2026 16:17",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "100421",
+          "qty": 800
+        },
+        {
+          "article": "100458",
+          "qty": 5
+        },
+        {
+          "article": "100477",
+          "qty": 12
+        },
+        {
+          "article": "201187",
+          "qty": 30
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "21.07.2026 09:00"
+        },
+        {
+          "status": "processing",
+          "dateTime": "21.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "01.08.2026 16:17"
+        }
+      ]
+    },
+    {
+      "id": 63,
+      "number": "3029",
+      "direction": "theirs",
+      "status": "shipped",
+      "counterpartyWarehouse": "Центральный склад",
+      "counterpartyResponsible": "Волкова М.С.",
+      "createdDateTime": "22.07.2026 09:00",
+      "shipDateTime": "01.08.2026 20:44",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "positions": [
+        {
+          "article": "201204",
+          "qty": 18
+        },
+        {
+          "article": "201187",
+          "qty": 24
+        },
+        {
+          "article": "100421",
+          "qty": 600
+        },
+        {
+          "article": "100433",
+          "qty": 600
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "22.07.2026 09:00"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "30.07.2026 13:04"
+        },
+        {
+          "status": "shipped",
+          "dateTime": "01.08.2026 20:44"
+        }
+      ],
+      "packedIndexes": [],
+      "pickStartedAt": "26.07.2026 23:33",
+      "pickResponsible": "Егорова Н.И."
+    },
+    {
+      "id": 64,
+      "number": "2016",
+      "direction": "ours",
+      "status": "created",
+      "counterpartyWarehouse": "Центральный склад",
+      "counterpartyResponsible": "Волкова М.С.",
+      "createdDateTime": "30.07.2026 13:06",
+      "shipDateTime": "—",
+      "acceptedAt": null,
+      "responsible": "Кузнецов И.А.",
+      "comment": "",
+      "positions": [
+        {
+          "article": "300159",
+          "qty": 3
+        }
+      ],
+      "history": [
+        {
+          "status": "created",
+          "dateTime": "30.07.2026 13:06"
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "fullName": "Кузнецов Игорь Александрович",
+      "role": "admin",
+      "warehouse": "Центральный склад",
+      "position": "Начальник склада",
+      "status": "active",
+      "phone": "+7 916 204-11-87",
+      "email": "i.kuznetsov@stalker.ru",
+      "hireDate": "12.03.2019",
+      "lastLogin": "05.08.2026 19:14",
+      "login": "i.kuznetsov",
+      "passwordHash": "pbkdf2_sha256$120000$I7jtimEcNh5rEbluWWR9kw==$p8VVYBriJBegViFdRzSCbm/lX3R8z4In4swUV3P6bSg="
+    },
+    {
+      "id": 2,
+      "fullName": "Соколов Пётр Николаевич",
+      "role": "stockman",
+      "warehouse": "Склад №1",
+      "position": "Кладовщик",
+      "status": "blocked",
+      "phone": "+7 903 551-22-14",
+      "email": "p.sokolov@stalker.ru",
+      "hireDate": "05.06.2020",
+      "lastLogin": "24.07.2026 07:58",
+      "login": "p.sokolov",
+      "passwordHash": "pbkdf2_sha256$120000$lQ316aKv3D+gaZgLNUNOAQ==$okgUIHX7oeyEELpIRKyPjAxQ9+gjk+AOYuZN/7AFG5Y="
+    },
+    {
+      "id": 3,
+      "fullName": "Морозова Елена Викторовна",
+      "role": "manager",
+      "warehouse": "Склад №3",
+      "position": "Менеджер по логистике",
+      "status": "active",
+      "phone": "+7 925 118-77-03",
+      "email": "e.morozova@stalker.ru",
+      "hireDate": "18.09.2021",
+      "lastLogin": "23.07.2026 17:20",
+      "login": "e.morozova",
+      "passwordHash": "pbkdf2_sha256$120000$lMg442IiETvjBkUOWv51uw==$/LbcMPv61h07wABXqpC2f9ipSQYaPpkxE0s6gUVniuI="
+    },
+    {
+      "id": 4,
+      "fullName": "Титов Роман Андреевич",
+      "role": "stockman",
+      "warehouse": "Склад №4",
+      "position": "Кладовщик",
+      "status": "active",
+      "phone": "+7 909 330-45-61",
+      "email": "r.titov@stalker.ru",
+      "hireDate": "02.02.2022",
+      "lastLogin": "24.07.2026 09:05",
+      "login": "r.titov",
+      "passwordHash": "pbkdf2_sha256$120000$qGQ+osxW7eFsn5S+X0f50g==$CHvMVmnPXc6uHTP0lNrr4vmp5o3I6Jzhg3Z5EGH221Q="
+    },
+    {
+      "id": 5,
+      "fullName": "Волкова Мария Сергеевна",
+      "role": "manager",
+      "warehouse": "Центральный склад",
+      "position": "Менеджер по закупкам",
+      "status": "active",
+      "phone": "+7 917 442-90-08",
+      "email": "m.volkova@stalker.ru",
+      "hireDate": "27.11.2020",
+      "lastLogin": "24.07.2026 08:15",
+      "login": "m.volkova",
+      "passwordHash": "pbkdf2_sha256$120000$dKZDvq52ynXAd80R/ZaW7Q==$QEZlg0ozJuyDJa734uyNhf14zJtXugrMMaoJJ3M69Ys="
+    },
+    {
+      "id": 6,
+      "fullName": "Новиков Дмитрий Олегович",
+      "role": "stockman",
+      "warehouse": "Склад №1",
+      "position": "Комплектовщик",
+      "status": "active",
+      "phone": "+7 985 220-14-30",
+      "email": "d.novikov@stalker.ru",
+      "hireDate": "14.04.2023",
+      "lastLogin": "23.07.2026 16:40",
+      "login": "d.novikov",
+      "passwordHash": "pbkdf2_sha256$120000$jHXVxb1Qg2AV7U4wTW5gZg==$M/hDso0/9qkZb55Ah/VtVaQEOlvnoJRCF0115NitMqo="
+    },
+    {
+      "id": 7,
+      "fullName": "Козлова Анна Павловна",
+      "role": "manager",
+      "warehouse": "Склад №3",
+      "position": "Менеджер заказов",
+      "status": "active",
+      "phone": "+7 926 771-08-52",
+      "email": "a.kozlova@stalker.ru",
+      "hireDate": "09.07.2021",
+      "lastLogin": "24.07.2026 08:33",
+      "login": "a.kozlova",
+      "passwordHash": "pbkdf2_sha256$120000$4WUd7CVNXMdIrhRAd5zxDg==$I7xdhnvPfj/BDUBW4lx03wZ+aIXWnL4u1eDu7R7tROs="
+    },
+    {
+      "id": 8,
+      "fullName": "Лебедев Сергей Иванович",
+      "role": "stockman",
+      "warehouse": "Склад №4",
+      "position": "Кладовщик",
+      "status": "blocked",
+      "phone": "+7 903 118-64-27",
+      "email": "s.lebedev@stalker.ru",
+      "hireDate": "21.10.2019",
+      "lastLogin": "11.05.2026 14:02",
+      "login": "s.lebedev",
+      "passwordHash": "pbkdf2_sha256$120000$1WfN/l8hdwOiaarZZlGGKQ==$Hn94GSsVI2reHnI0cDAqvsR/DgmwlXb8c9T7ha3n0rw="
+    },
+    {
+      "id": 9,
+      "fullName": "Егорова Ольга Дмитриевна",
+      "role": "manager",
+      "warehouse": "Склад №1",
+      "position": "Менеджер по логистике",
+      "status": "active",
+      "phone": "+7 916 905-33-71",
+      "email": "o.egorova@stalker.ru",
+      "hireDate": "30.01.2022",
+      "lastLogin": "24.07.2026 09:12",
+      "login": "o.egorova",
+      "passwordHash": "pbkdf2_sha256$120000$qPQUOWDx31eJ96VBeKGikQ==$lxbNDX5wIyrjmL5JCd9aOHE+nhAwUINpYo7hpDD3cZU="
+    },
+    {
+      "id": 10,
+      "fullName": "Павлов Артём Викторович",
+      "role": "admin",
+      "warehouse": "Склад №3",
+      "position": "Администратор системы",
+      "status": "active",
+      "phone": "+7 925 604-77-19",
+      "email": "a.pavlov@stalker.ru",
+      "hireDate": "15.08.2018",
+      "lastLogin": "24.07.2026 08:01",
+      "login": "a.pavlov",
+      "passwordHash": "pbkdf2_sha256$120000$A65u4a5qzohU7I58x4mezA==$56/1fAg/qxunX5HIw04zCTqyrc/pppC+lUodTeyslgo="
+    },
+    {
+      "id": 11,
+      "fullName": "Семёнов Никита Андреевич",
+      "role": "stockman",
+      "warehouse": "Центральный склад",
+      "position": "Приёмщик",
+      "status": "active",
+      "phone": "+7 909 442-11-06",
+      "email": "n.semenov@stalker.ru",
+      "hireDate": "03.03.2024",
+      "lastLogin": "23.07.2026 18:47",
+      "login": "n.semenov",
+      "passwordHash": "pbkdf2_sha256$120000$ncV9aqdoWDJiJFfVtXIswA==$jY0i6QwQNLrA3OzHE7bVNniv6jtLT6SuHPtmPIyUQgs="
+    },
+    {
+      "id": 12,
+      "fullName": "Фёдорова Татьяна Юрьевна",
+      "role": "manager",
+      "warehouse": "Склад №4",
+      "position": "Менеджер по закупкам",
+      "status": "active",
+      "phone": "+7 917 330-88-52",
+      "email": "t.fedorova@stalker.ru",
+      "hireDate": "22.05.2021",
+      "lastLogin": "24.07.2026 07:44",
+      "login": "t.fedorova",
+      "passwordHash": "pbkdf2_sha256$120000$atoAofWWqzgas4vE/fqyQA==$RaCGqrPaHwYoQcFV2AtmSP+MFRaP79Zvbw8sB6k7IDk="
+    },
+    {
+      "id": 13,
+      "fullName": "Михайлов Владимир Петрович",
+      "role": "stockman",
+      "warehouse": "Склад №1",
+      "position": "Кладовщик",
+      "status": "active",
+      "phone": "+7 985 771-20-63",
+      "email": "v.mihaylov@stalker.ru",
+      "hireDate": "19.12.2020",
+      "lastLogin": "24.07.2026 08:50",
+      "login": "v.mihaylov",
+      "passwordHash": "pbkdf2_sha256$120000$ApvcKit/nYgXPCEMTd2iXQ==$CVpUdqoaSHd6BKdjnE7fu5rn2aDNy2fUJXqDDA5/V+s="
+    },
+    {
+      "id": 14,
+      "fullName": "Виноградова Ирина Олеговна",
+      "role": "manager",
+      "warehouse": "Склад №3",
+      "position": "Менеджер заказов",
+      "status": "active",
+      "phone": "+7 926 118-45-90",
+      "email": "i.vinogradova@stalker.ru",
+      "hireDate": "07.06.2023",
+      "lastLogin": "23.07.2026 15:33",
+      "login": "i.vinogradova",
+      "passwordHash": "pbkdf2_sha256$120000$WLwIL0ERw9+IWQjGMsDroA==$MYNvRlT+KPz9zWJElwyhZIpt33P3r2d0zzR0CJlv1A0="
+    },
+    {
+      "id": 15,
+      "fullName": "Богданов Алексей Сергеевич",
+      "role": "stockman",
+      "warehouse": "Склад №4",
+      "position": "Комплектовщик",
+      "status": "blocked",
+      "phone": "+7 903 905-14-08",
+      "email": "a.bogdanov@stalker.ru",
+      "hireDate": "11.09.2019",
+      "lastLogin": "02.03.2026 10:21",
+      "login": "a.bogdanov",
+      "passwordHash": "pbkdf2_sha256$120000$+t4il+NGlLGEJUpQvCZlzw==$8nXhuH2Tue7h9QXjPron2obAQoJ9Ixo3YzY/SMASvBg="
+    },
+    {
+      "id": 16,
+      "fullName": "Орлова Наталья Игоревна",
+      "role": "manager",
+      "warehouse": "Центральный склад",
+      "position": "Менеджер по логистике",
+      "status": "active",
+      "phone": "+7 916 442-77-31",
+      "email": "n.orlova@stalker.ru",
+      "hireDate": "26.02.2022",
+      "lastLogin": "24.07.2026 09:00",
+      "login": "n.orlova",
+      "passwordHash": "pbkdf2_sha256$120000$K6GsiCAGADcnD5k7+jWdEw==$L9UB/R0bF67Rpe8CIAw2I15G0YkrnDYyAn6iesx5wv4="
+    },
+    {
+      "id": 17,
+      "fullName": "Киселёв Максим Дмитриевич",
+      "role": "stockman",
+      "warehouse": "Склад №1",
+      "position": "Приёмщик",
+      "status": "active",
+      "phone": "+7 925 220-63-14",
+      "email": "m.kiselev@stalker.ru",
+      "hireDate": "13.11.2023",
+      "lastLogin": "24.07.2026 08:22",
+      "login": "m.kiselev",
+      "passwordHash": "pbkdf2_sha256$120000$xKDpsWn7nBpz1ZQtq2PsMA==$EihhyQdqzTWzFO5zY1G2SUHfzXsQd9jcxJ+8sLCqeZo="
+    },
+    {
+      "id": 18,
+      "fullName": "Макарова Светлана Андреевна",
+      "role": "admin",
+      "warehouse": "Центральный склад",
+      "position": "Администратор",
+      "status": "active",
+      "phone": "+7 917 604-11-90",
+      "email": "s.makarova@stalker.ru",
+      "hireDate": "04.04.2019",
+      "lastLogin": "24.07.2026 08:37",
+      "login": "s.makarova",
+      "passwordHash": "pbkdf2_sha256$120000$3qnTYwAXhvcsF0yFqJcQIw==$lnIN0A8yuAwvD0Th1BewdHB8GOWzYPY4V4Luktqc/CU="
+    },
+    {
+      "id": 19,
+      "fullName": "Никитин Павел Романович",
+      "role": "stockman",
+      "warehouse": "Склад №3",
+      "position": "Кладовщик",
+      "status": "active",
+      "phone": "+7 909 771-33-27",
+      "email": "p.nikitin@stalker.ru",
+      "hireDate": "28.07.2022",
+      "lastLogin": "23.07.2026 17:05",
+      "login": "p.nikitin",
+      "passwordHash": "pbkdf2_sha256$120000$C+rwyfzfP4sUqcbo5X6cwQ==$3K6dfSeOJUUB3xwSgZGHUmu6ShqlJDtcGsw5dk1VA34="
+    },
+    {
+      "id": 20,
+      "fullName": "Захарова Юлия Владимировна",
+      "role": "manager",
+      "warehouse": "Склад №4",
+      "position": "Менеджер по закупкам",
+      "status": "active",
+      "phone": "+7 985 330-45-08",
+      "email": "y.zaharova@stalker.ru",
+      "hireDate": "16.01.2024",
+      "lastLogin": "24.07.2026 08:19",
+      "login": "y.zaharova",
+      "passwordHash": "pbkdf2_sha256$120000$pvruB1R7QuSPi2LG+739Dw==$MbvdIoot3MIYoJH8AnO/T0LNMRfb2lBzWGBys1qP9aQ="
+    }
+  ],
+  "permissions": {
+    "manager": {
+      "orders": {
+        "view": true,
+        "edit": false
+      },
+      "shipping": {
+        "view": true,
+        "edit": false
+      },
+      "receiving": {
+        "view": true,
+        "edit": false
+      },
+      "catalog": {
+        "view": true,
+        "edit": true
+      },
+      "stock": {
+        "view": true,
+        "edit": false
+      },
+      "users": {
+        "view": false,
+        "edit": false
+      }
+    },
+    "stockman": {
+      "orders": {
+        "view": true,
+        "edit": false
+      },
+      "shipping": {
+        "view": true,
+        "edit": true
+      },
+      "receiving": {
+        "view": true,
+        "edit": true
+      },
+      "catalog": {
+        "view": true,
+        "edit": false
+      },
+      "stock": {
+        "view": true,
+        "edit": true
+      },
+      "users": {
+        "view": false,
+        "edit": false
+      }
+    },
+    "admin": {
+      "orders": {
+        "view": true,
+        "edit": true
+      },
+      "shipping": {
+        "view": true,
+        "edit": true
+      },
+      "receiving": {
+        "view": true,
+        "edit": true
+      },
+      "catalog": {
+        "view": true,
+        "edit": true
+      },
+      "stock": {
+        "view": true,
+        "edit": true
+      },
+      "users": {
+        "view": true,
+        "edit": true
+      }
+    }
+  },
+  "receiving": {
+    "batches": [
+      {
+        "id": 1,
+        "number": "1187",
+        "supplier": "«Метизпром»",
+        "shipDateTime": "21.07.2026 09:40",
+        "createdDateTime": "18.07.2026 14:05",
+        "positions": [
+          {
+            "article": "100421",
+            "boxes": 1,
+            "boxWeight": 22.4
+          },
+          {
+            "article": "100433",
+            "boxes": 1,
+            "boxWeight": 18.0
+          },
+          {
+            "article": "201187",
+            "boxes": 3,
+            "boxWeight": 8.2
+          },
+          {
+            "article": "100458",
+            "boxes": 2,
+            "boxWeight": 145.0
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "number": "1192",
+        "supplier": "«Металлторг»",
+        "shipDateTime": "21.07.2026 11:15",
+        "createdDateTime": "19.07.2026 10:22",
+        "positions": [
+          {
+            "article": "100458",
+            "boxes": 3,
+            "boxWeight": 145.0
+          },
+          {
+            "article": "100477",
+            "boxes": 2,
+            "boxWeight": 60.0
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "number": "1175",
+        "supplier": "ООО «ПодшипникСнаб»",
+        "shipDateTime": "20.07.2026 16:30",
+        "createdDateTime": "16.07.2026 09:50",
+        "positions": [
+          {
+            "article": "201187",
+            "boxes": 2,
+            "boxWeight": 8.2
+          },
+          {
+            "article": "201204",
+            "boxes": 1,
+            "boxWeight": 4.5
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "number": "1201",
+        "supplier": "«Стальресурс»",
+        "shipDateTime": "22.07.2026 08:15",
+        "createdDateTime": "19.07.2026 12:40",
+        "positions": [
+          {
+            "article": "100477",
+            "boxes": 2,
+            "boxWeight": 60.0
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "number": "1204",
+        "supplier": "«Метизпром»",
+        "shipDateTime": "22.07.2026 10:00",
+        "createdDateTime": "20.07.2026 09:15",
+        "positions": [
+          {
+            "article": "100421",
+            "boxes": 2,
+            "boxWeight": 22.4
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "number": "1206",
+        "supplier": "ООО «ПодшипникСнаб»",
+        "shipDateTime": "22.07.2026 13:20",
+        "createdDateTime": "20.07.2026 15:30",
+        "positions": [
+          {
+            "article": "201187",
+            "boxes": 1,
+            "boxWeight": 8.2
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "number": "1209",
+        "supplier": "«Металлторг»",
+        "shipDateTime": "23.07.2026 09:00",
+        "createdDateTime": "21.07.2026 11:05",
+        "positions": [
+          {
+            "article": "100458",
+            "boxes": 1,
+            "boxWeight": 145.0
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "number": "1211",
+        "supplier": "«Стальресурс»",
+        "shipDateTime": "23.07.2026 14:45",
+        "createdDateTime": "21.07.2026 16:10",
+        "positions": [
+          {
+            "article": "100477",
+            "boxes": 1,
+            "boxWeight": 60.0
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "number": "1213",
+        "supplier": "«Метизпром»",
+        "shipDateTime": "24.07.2026 08:30",
+        "createdDateTime": "22.07.2026 10:50",
+        "positions": [
+          {
+            "article": "100433",
+            "boxes": 1,
+            "boxWeight": 18.0
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "number": "1216",
+        "supplier": "«Металлторг»",
+        "shipDateTime": "24.07.2026 09:50",
+        "createdDateTime": "22.07.2026 12:15",
+        "positions": [
+          {
+            "article": "201204",
+            "boxes": 2,
+            "boxWeight": 4.5
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "number": "1218",
+        "supplier": "ООО «ПодшипникСнаб»",
+        "shipDateTime": "24.07.2026 11:30",
+        "createdDateTime": "22.07.2026 14:40",
+        "positions": [
+          {
+            "article": "201187",
+            "boxes": 2,
+            "boxWeight": 8.2
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "number": "1221",
+        "supplier": "«Стальресурс»",
+        "shipDateTime": "24.07.2026 14:05",
+        "createdDateTime": "23.07.2026 08:20",
+        "positions": [
+          {
+            "article": "100458",
+            "boxes": 3,
+            "boxWeight": 145.0
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "number": "1223",
+        "supplier": "«Метизпром»",
+        "shipDateTime": "25.07.2026 08:00",
+        "createdDateTime": "23.07.2026 10:05",
+        "positions": [
+          {
+            "article": "100421",
+            "boxes": 1,
+            "boxWeight": 22.4
+          },
+          {
+            "article": "100433",
+            "boxes": 1,
+            "boxWeight": 18.0
+          }
+        ]
+      }
+    ],
+    "progress": {
+      "1": {
+        "scanned": [
+          {
+            "barcode": "WH1281187100421",
+            "article": "100421",
+            "actualWeight": "22.3",
+            "diffKg": "-0.1",
+            "diffPercent": "0.5"
+          },
+          {
+            "barcode": "WH1281187100433",
+            "article": "100433",
+            "actualWeight": "17.9",
+            "diffKg": "-0.1",
+            "diffPercent": "0.5"
+          },
+          {
+            "barcode": "WH1281187201187-02",
+            "article": "201187",
+            "actualWeight": "8.2",
+            "diffKg": "-0.0",
+            "diffPercent": "0.5"
+          },
+          {
+            "barcode": "WH1281187201187-03",
+            "article": "201187",
+            "actualWeight": "8.2",
+            "diffKg": "-0.0",
+            "diffPercent": "0.5"
+          },
+          {
+            "barcode": "WH1281187100458-01",
+            "article": "100458",
+            "actualWeight": "144.3",
+            "diffKg": "-0.7",
+            "diffPercent": "0.5"
+          },
+          {
+            "barcode": "WH1281187201187-01",
+            "article": "201187",
+            "actualWeight": "8.2",
+            "diffKg": "0.0",
+            "diffPercent": "0.0"
+          },
+          {
+            "barcode": "WH1281187100458-02",
+            "article": "100458",
+            "isMissing": true
+          }
+        ],
+        "done": true,
+        "responsible": "Кузнецов И.А.",
+        "acceptedAt": "01.08.2026 16:17"
+      },
+      "2": {
+        "scanned": [],
+        "done": false,
+        "responsible": "Кузнецов И.А.",
+        "acceptedAt": null
+      }
+    }
+  },
+  "shipping": {
+    "packing": {
+      "63": {
+        "boxes": [
+          {
+            "barcode": "SH3029201204-01",
+            "article": "201204",
+            "qty": 11,
+            "weight": "5.00"
+          },
+          {
+            "barcode": "SH3029201204-02",
+            "article": "201204",
+            "qty": 7,
+            "weight": "5.00"
+          },
+          {
+            "barcode": "SH3029201187-03",
+            "article": "201187",
+            "qty": 24,
+            "weight": "5.00"
+          },
+          {
+            "barcode": "SH3029100421-04",
+            "article": "100421",
+            "qty": 250,
+            "weight": "5.00"
+          },
+          {
+            "barcode": "SH3029100421-05",
+            "article": "100421",
+            "qty": 250,
+            "weight": "5.00"
+          },
+          {
+            "barcode": "SH3029100421-06",
+            "article": "100421",
+            "qty": 100,
+            "weight": "5.00"
+          },
+          {
+            "barcode": "SH3029100433-07",
+            "article": "100433",
+            "qty": 500,
+            "weight": "5.00"
+          },
+          {
+            "barcode": "SH3029100433-08",
+            "article": "100433",
+            "qty": 100,
+            "weight": "5.00"
+          }
+        ],
+        "done": true,
+        "responsible": "Кузнецов И.А.",
+        "shippedAt": "01.08.2026 20:44"
+      },
+      "60": {
+        "boxes": [
+          {
+            "barcode": "SH3026100458-02",
+            "article": "100458",
+            "qty": 1,
+            "weight": "72.79"
+          },
+          {
+            "barcode": "SH3026100458-03",
+            "article": "100458",
+            "qty": 1,
+            "weight": "72.79"
+          },
+          {
+            "barcode": "SH3026100458-04",
+            "article": "100458",
+            "qty": 1,
+            "weight": "72.79"
+          },
+          {
+            "barcode": "SH3026100458-05",
+            "article": "100458",
+            "qty": 1,
+            "weight": "72.79"
+          },
+          {
+            "barcode": "SH3026100458-06",
+            "article": "100458",
+            "qty": 1,
+            "weight": "72.79"
+          },
+          {
+            "barcode": "SH3026100477-07",
+            "article": "100477",
+            "qty": 5,
+            "weight": "22.59"
+          },
+          {
+            "barcode": "SH3026100477-08",
+            "article": "100477",
+            "qty": 5,
+            "weight": "22.59"
+          },
+          {
+            "barcode": "SH3026100477-09",
+            "article": "100477",
+            "qty": 2,
+            "weight": "9.04"
+          },
+          {
+            "barcode": "SH3026201187-10",
+            "article": "201187",
+            "qty": 30,
+            "weight": "2.41"
+          },
+          {
+            "barcode": "SH3026100421-10",
+            "article": "100421",
+            "qty": 800,
+            "weight": "16.00"
+          }
+        ],
+        "done": true,
+        "responsible": "Кузнецов И.А.",
+        "shippedAt": "01.08.2026 16:17"
+      },
+      "30": {
+        "boxes": [
+          {
+            "barcode": "SH3015100421-01",
+            "article": "100421",
+            "qty": 50,
+            "weight": "1.00"
+          }
+        ],
+        "done": false,
+        "responsible": "Кузнецов И.А.",
+        "shippedAt": null
+      }
+    }
+  },
+  "session": {
+    "currentUserId": 1,
+    "remember": true
+  }
+}

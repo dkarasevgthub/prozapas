@@ -2,6 +2,8 @@
 
 Configures a RotatingFileHandler (5 files × 2 MB) writing to
 %ProgramData%\\ProZapas\\devices.log (or the path specified in config).
+Without %ProgramData% (non-Windows) and without a configured path only
+stderr is used.
 """
 
 from __future__ import annotations
@@ -26,12 +28,15 @@ def setup_logging(config: dict[str, Any]) -> None:
     level_name: str = log_cfg.get("level", "info").upper()
     log_path: str | None = log_cfg.get("path") or None
 
-    # Resolve log path
+    # Without an explicit path the file goes to %ProgramData%. Where that
+    # variable is absent (macOS, Linux) a fallback would create a bogus
+    # relative "C:\ProgramData" under cwd, so there we log to stderr only.
     if not log_path:
-        program_data = os.environ.get("PROGRAMDATA", r"C:\ProgramData")
-        log_dir = Path(program_data) / "ProZapas"
-        log_dir.mkdir(parents=True, exist_ok=True)
-        log_path = str(log_dir / "devices.log")
+        program_data = os.environ.get("PROGRAMDATA")
+        if program_data:
+            log_dir = Path(program_data) / "ProZapas"
+            log_dir.mkdir(parents=True, exist_ok=True)
+            log_path = str(log_dir / "devices.log")
 
     numeric_level = getattr(logging, level_name, logging.INFO)
 
@@ -47,15 +52,16 @@ def setup_logging(config: dict[str, Any]) -> None:
     )
 
     # Rotating file handler: 5 files, 2 MB each
-    file_handler = RotatingFileHandler(
-        log_path,
-        maxBytes=2 * 1024 * 1024,  # 2 MB
-        backupCount=5,
-        encoding="utf-8",
-    )
-    file_handler.setLevel(numeric_level)
-    file_handler.setFormatter(formatter)
-    root_logger.addHandler(file_handler)
+    if log_path:
+        file_handler = RotatingFileHandler(
+            log_path,
+            maxBytes=2 * 1024 * 1024,  # 2 MB
+            backupCount=5,
+            encoding="utf-8",
+        )
+        file_handler.setLevel(numeric_level)
+        file_handler.setFormatter(formatter)
+        root_logger.addHandler(file_handler)
 
     # Also log to stderr for development convenience
     stream_handler = logging.StreamHandler()
@@ -63,4 +69,4 @@ def setup_logging(config: dict[str, Any]) -> None:
     stream_handler.setFormatter(formatter)
     root_logger.addHandler(stream_handler)
 
-    root_logger.info("Logging initialised at level=%s path=%s", level_name, log_path)
+    root_logger.info("Logging initialised at level=%s path=%s", level_name, log_path or "stderr")

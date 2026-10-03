@@ -296,6 +296,13 @@ class Order(PkMixin, TimestampMixin, VersionMixin, Base):
         DateTime(timezone=True), nullable=True)
     accepted_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True)
+    from_warehouse: Mapped["Warehouse"] = relationship(
+        foreign_keys=[from_warehouse_id], lazy="joined")
+    to_warehouse: Mapped["Warehouse"] = relationship(
+        foreign_keys=[to_warehouse_id], lazy="joined")
+    responsible: Mapped[Optional["UserAccount"]] = relationship(
+        foreign_keys=[responsible_user_id], lazy="joined")
+    positions: Mapped[list["OrderPosition"]] = relationship()
 
     __table_args__ = (
         check_enum("status", OrderStatus, "status"),
@@ -313,6 +320,7 @@ class OrderPosition(PkMixin, Base):
     item_id: Mapped[int] = mapped_column(
         ForeignKey("catalog_item.id", ondelete="RESTRICT"))
     qty: Mapped[float] = mapped_column(QTY)
+    item: Mapped["CatalogItem"] = relationship(lazy="joined")
 
     __table_args__ = (
         UniqueConstraint("order_id", "item_id"),
@@ -349,7 +357,11 @@ class Shipment(PkMixin, TimestampMixin, VersionMixin, Base):
         ForeignKey("user_account.id", ondelete="SET NULL"), nullable=True)
     shipped_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True)
-
+    order: Mapped["Order"] = relationship(lazy="select")
+    responsible: Mapped[Optional["UserAccount"]] = relationship(
+        foreign_keys=[responsible_user_id], lazy="joined")
+    boxes: Mapped[list["ShipmentBox"]] = relationship(
+        order_by="ShipmentBox.created_at, ShipmentBox.id")
     __table_args__ = (
         check_enum("status", DocStatus, "status"),
         Index("ix_shipment_list", "status", "created_at"),
@@ -385,7 +397,7 @@ class ShipmentBox(PkMixin, Base):
     actual_weight: Mapped[Optional[float]] = mapped_column(WEIGHT, nullable=True)
     received_by_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("user_account.id", ondelete="SET NULL"), nullable=True)
-
+    item: Mapped["CatalogItem"] = relationship(lazy="joined")
     __table_args__ = (
         CheckConstraint("qty > 0", name="qty"),
         CheckConstraint("weight > 0", name="weight"),
@@ -409,7 +421,9 @@ class Receipt(PkMixin, TimestampMixin, VersionMixin, Base):
         ForeignKey("user_account.id", ondelete="SET NULL"), nullable=True)
     accepted_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True)
-
+    order: Mapped["Order"] = relationship(lazy="select")
+    responsible: Mapped[Optional["UserAccount"]] = relationship(
+        foreign_keys=[responsible_user_id], lazy="joined")
     __table_args__ = (
         check_enum("status", DocStatus, "status"),
         Index("ix_receipt_list", "status", "created_at"),

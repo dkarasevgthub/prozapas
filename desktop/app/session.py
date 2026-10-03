@@ -46,6 +46,10 @@ class Session:
         return self.user is not None
 
     @property
+    def is_admin(self) -> bool:
+        return bool(self.user and self.user.get("role") == "admin")
+
+    @property
     def user_id(self) -> int | None:
         return self.user["id"] if self.user else None
 
