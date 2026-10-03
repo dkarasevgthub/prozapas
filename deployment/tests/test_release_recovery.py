@@ -31,12 +31,16 @@ class ReleaseRecoveryTests(unittest.TestCase):
         (self.root / "current").symlink_to(self.old.parent, target_is_directory=True)
         self.calls = []
         self.script = module("deploy")
+        self.key = self.root / "release-marker-key"
+        self.key.touch()
 
     def run_release(self, failure=None, empty_backup=False):
         def command(arguments, **kwargs):
             self.calls.append(arguments)
-            if arguments[-2:] == ["rev-parse", "refs/heads/deploy"]:
+            if arguments[-2:] == ["rev-parse", "refs/heads/main"]:
                 return self.sha + "\n"
+            if arguments[-1] == "https://185.196.117.2/api/v1/version":
+                return json.dumps({"version": self.sha})
             if "archive" in arguments:
                 path = Path(arguments[arguments.index("-o") + 1])
                 with tarfile.open(path, "w") as archive:
@@ -48,6 +52,12 @@ class ReleaseRecoveryTests(unittest.TestCase):
                 raise subprocess.CalledProcessError(1, arguments)
             if failure == "health" and arguments[0] == "curl":
                 raise subprocess.CalledProcessError(22, arguments)
+            if "push" in arguments:
+                # Publishing cannot precede the healthy release's local state.
+                self.assertEqual(json.loads((self.config / "deployed.json").read_text())["sha"], self.sha)
+                self.assertEqual((self.root / "current").resolve(), self.root / "releases" / self.sha)
+                if failure == "publish":
+                    raise subprocess.CalledProcessError(1, arguments)
 
         def backup(arguments, **kwargs):
             self.calls.append(arguments)
@@ -55,6 +65,7 @@ class ReleaseRecoveryTests(unittest.TestCase):
                 kwargs["stdout"].write(b"non-empty-test-database-backup")
 
         with patch.object(self.script, "ROOT", self.root), patch.object(self.script, "CONFIG", self.config), \
+             patch.object(self.script, "PUBLISH_KEY", self.key), \
              patch.object(self.script, "run", side_effect=command), \
              patch.object(self.script.subprocess, "run", side_effect=backup):
             self.script.deploy(self.sha)
@@ -64,6 +75,8 @@ class ReleaseRecoveryTests(unittest.TestCase):
         backup_index = next(i for i, command in enumerate(self.calls) if "pg_dump" in " ".join(command))
         migration_index = next(i for i, command in enumerate(self.calls) if "upgrade" in command)
         self.assertLess(backup_index, migration_index)
+        self.assertIn("push", self.calls[-1])
+        self.assertFalse(any("push" in command for command in self.calls[:migration_index]))
         self.assertFalse(any("seed" in command or "down" in command for command in self.calls))
         state = json.loads((self.config / "deployed.json").read_text())
         self.assertEqual(state["sha"], self.sha)
@@ -75,6 +88,7 @@ class ReleaseRecoveryTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "backup is empty"):
             self.run_release(empty_backup=True)
         self.assertFalse(any("upgrade" in command for command in self.calls))
+        self.assertFalse(any("push" in command for command in self.calls))
         self.assertEqual(json.loads((self.config / "deployed.json").read_text()), self.state)
 
     def test_failed_migration_and_health_restore_previous_api_without_reversing_db(self):
@@ -90,3 +104,14 @@ class ReleaseRecoveryTests(unittest.TestCase):
                 self.assertFalse(any("downgrade" in command for command in self.calls))
                 self.assertEqual(json.loads((self.config / "deployed.json").read_text()), self.state)
                 self.assertEqual((self.root / "current").resolve(), self.old.parent)
+                self.assertFalse(any("push" in command for command in self.calls))
+
+    def test_failed_marker_publication_keeps_running_release_and_retry_repairs_marker(self):
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.run_release(failure="publish")
+        self.assertEqual(json.loads((self.config / "deployed.json").read_text())["sha"], self.sha)
+        self.calls.clear()
+        self.run_release()
+        self.assertIn("push", self.calls[-1])
+        self.assertFalse(any("build" in command or "upgrade" in command or "pg_dump" in " ".join(command)
+                             for command in self.calls))

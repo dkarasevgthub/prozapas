@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Deploy an exact commit from deploy; preserve DB, secrets and old releases."""
+"""Deploy approved main, then record the healthy running commit in deploy."""
 from datetime import datetime, timezone
 import json
 import os
@@ -12,6 +12,9 @@ import tarfile
 ROOT = Path("/opt/prozapas")
 CONFIG = ROOT / "deployment"
 REPOSITORY = "https://github.com/dkarasevgthub/prozapas.git"
+PUBLISH_REPOSITORY = "git@github.com:dkarasevgthub/prozapas.git"
+PUBLISH_KEY = Path("/root/.ssh/prozapas_release_marker")
+PUBLISH_HOSTS = Path("/root/.ssh/prozapas_github_known_hosts")
 
 
 def log(message):
@@ -48,6 +51,25 @@ def load_previous():
         return CONFIG, None
 
 
+def publish_release(repository, sha):
+    """Publish only a release recorded locally and confirmed by the public API."""
+    if json.loads((CONFIG / "deployed.json").read_text())["sha"] != sha:
+        raise RuntimeError("Only the running release may be recorded in deploy")
+    version = json.loads(run(["curl", "--fail", "--silent", "--show-error",
+                             "https://185.196.117.2/api/v1/version"], capture=True))
+    if version["version"] != sha:
+        raise RuntimeError("Public API version differs from the release marker")
+    git = ["git", "--git-dir", str(repository)]
+    run(git + ["fetch", "--no-tags", REPOSITORY,
+               "+refs/heads/deploy:refs/heads/deploy"])
+    run(git + ["merge-base", "--is-ancestor", "refs/heads/deploy", sha])
+    ssh_command = (f"ssh -i {PUBLISH_KEY} -o BatchMode=yes -o IdentitiesOnly=yes "
+                   f"-o StrictHostKeyChecking=yes -o UserKnownHostsFile={PUBLISH_HOSTS}")
+    run(["git", "-c", "core.sshCommand=" + ssh_command, "--git-dir", str(repository),
+         "push", PUBLISH_REPOSITORY, f"{sha}:refs/heads/deploy"])
+    log(f"Recorded running release {sha} in deploy")
+
+
 def deploy(sha):
     if not re.fullmatch(r"[0-9a-f]{40}", sha):
         raise ValueError("Expected a full hexadecimal commit SHA")
@@ -57,17 +79,21 @@ def deploy(sha):
     if not repository.exists():
         run(["git", "init", "--bare", str(repository)])
     git = ["git", "--git-dir", str(repository)]
-    log("Fetching deploy branch")
+    log("Fetching approved main and the running release marker")
     run(git + ["fetch", "--no-tags", REPOSITORY,
-               "+refs/heads/deploy:refs/heads/deploy"])
-    latest = run(git + ["rev-parse", "refs/heads/deploy"], capture=True).strip()
+               "+refs/heads/main:refs/heads/main", "+refs/heads/deploy:refs/heads/deploy"])
+    latest = run(git + ["rev-parse", "refs/heads/main"], capture=True).strip()
     if latest != sha:
-        log(f"Skipping outdated commit {sha}; deploy is now {latest}")
+        log(f"Skipping outdated commit {sha}; main is now {latest}")
         return
+    if not PUBLISH_KEY.is_file():
+        raise RuntimeError("The server release marker key must be configured first")
+    run(git + ["merge-base", "--is-ancestor", "refs/heads/deploy", sha])
     previous_directory, previous_sha = load_previous()
     if previous_sha == sha:
         command, environment = compose(previous_directory, previous_sha)
         run(command + ["up", "-d", "--no-build", "--wait", "--wait-timeout", "120", "api", "proxy"], env=environment)
+        publish_release(repository, sha)
         log(f"Commit {sha} is already deployed and healthy")
         return
     release = ROOT / "releases" / sha
@@ -127,6 +153,9 @@ def deploy(sha):
     state.write_text(json.dumps({"sha": sha, "deployed_at": timestamp,
                                  "backup": str(backup)}, indent=2) + "\n")
     state.replace(CONFIG / "deployed.json")
+    # If publishing fails, the healthy release stays running. A retry repairs
+    # the marker without repeating migrations, builds or database backups.
+    publish_release(repository, sha)
     log(f"Successfully deployed {sha}")
 
 

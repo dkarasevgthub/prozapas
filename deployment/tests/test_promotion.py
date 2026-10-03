@@ -1,4 +1,5 @@
 """Exercise promotion with real Git repositories and no external services."""
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -26,6 +27,7 @@ class PromotionTests(unittest.TestCase):
         self.current = self.commit("feature.txt", "working feature")
         self.git("push", "origin", "main")
         self.script = module("promote")
+        self.server = module("deploy")
 
     def git(self, *arguments):
         return subprocess.run(["git", *arguments], cwd=self.checkout, check=True,
@@ -50,9 +52,9 @@ class PromotionTests(unittest.TestCase):
         with patch.object(self.script.subprocess, "run", side_effect=in_checkout):
             return self.script.promote(ref, sha)
 
-    def test_main_fast_forwards_deploy_to_same_tested_commit(self):
+    def test_main_preflight_leaves_release_marker_unchanged(self):
         self.assertTrue(self.promote("refs/heads/main", self.current))
-        self.assertEqual(self.remote_deploy(), self.current)
+        self.assertEqual(self.remote_deploy(), self.base)
 
     def test_stale_main_does_not_change_deploy(self):
         self.assertFalse(self.promote("refs/heads/main", self.base))
@@ -68,6 +70,44 @@ class PromotionTests(unittest.TestCase):
         self.assertEqual(self.remote_deploy(), divergent)
 
     def test_dev_cannot_promote(self):
-        with self.assertRaises(ValueError):
-            self.promote("refs/heads/dev", self.current)
+        for ref in ("refs/heads/dev", "refs/heads/deploy", "refs/heads/feature"):
+            with self.subTest(ref=ref), self.assertRaises(ValueError):
+                self.promote(ref, self.current)
         self.assertEqual(self.remote_deploy(), self.base)
+
+    def publish(self, version=None):
+        config = self.root / "server-state"
+        config.mkdir(exist_ok=True)
+        (config / "deployed.json").write_text(json.dumps({"sha": self.current}))
+        original_run = self.server.run
+
+        def verified_commands(command, **kwargs):
+            if command[0] == "curl":
+                return json.dumps({"version": version or self.current})
+            return original_run(command, **kwargs)
+
+        with patch.object(self.server, "CONFIG", config), \
+             patch.object(self.server, "REPOSITORY", str(self.remote)), \
+             patch.object(self.server, "PUBLISH_REPOSITORY", str(self.remote)), \
+             patch.object(self.server, "run", side_effect=verified_commands):
+            self.server.publish_release(self.checkout / ".git", self.current)
+
+    def test_server_publishes_only_the_confirmed_running_version(self):
+        self.assertTrue(self.promote("refs/heads/main", self.current))
+        self.assertEqual(self.remote_deploy(), self.base)
+        self.publish()
+        self.assertEqual(self.remote_deploy(), self.current)
+
+    def test_wrong_public_version_cannot_advance_release_marker(self):
+        with self.assertRaisesRegex(RuntimeError, "Public API version"):
+            self.publish(version=self.base)
+        self.assertEqual(self.remote_deploy(), self.base)
+
+    def test_server_cannot_rewrite_divergent_release_history(self):
+        self.git("switch", "deploy")
+        divergent = self.commit("hotfix.txt", "server release hotfix")
+        self.git("push", "origin", "deploy")
+        self.git("switch", "main")
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.publish()
+        self.assertEqual(self.remote_deploy(), divergent)

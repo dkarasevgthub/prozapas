@@ -1,4 +1,4 @@
-"""Promote a tested main commit to deploy without rewriting branch history."""
+"""Check a tested main commit; the server records deploy only after success."""
 import os
 from pathlib import Path
 import re
@@ -12,19 +12,16 @@ def git(*arguments, capture=False):
 
 
 def promote(ref, sha):
-    if ref not in ("refs/heads/main", "refs/heads/deploy"):
-        raise ValueError("Only main and deploy may deploy")
+    if ref != "refs/heads/main":
+        raise ValueError("Only main may deploy")
     if not re.fullmatch(r"[0-9a-f]{40}", sha):
         raise ValueError("Expected an exact commit SHA")
     git("fetch", "origin", "main", "deploy")
-    branch = ref.rsplit("/", 1)[-1]
-    if git("rev-parse", f"origin/{branch}", capture=True) != sha:
-        print(f"A newer {branch} commit exists; skipping this deployment")
+    if git("rev-parse", "origin/main", capture=True) != sha:
+        print("A newer main commit exists; skipping this deployment")
         return False
-    if branch == "main":
-        # A divergent deploy branch must be merged into main first, never overwritten.
-        git("merge-base", "--is-ancestor", "origin/deploy", sha)
-        git("push", "origin", f"{sha}:refs/heads/deploy")
+    # A divergent release marker must be merged into main first, never overwritten.
+    git("merge-base", "--is-ancestor", "origin/deploy", sha)
     return True
 
 
